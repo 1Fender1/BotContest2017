@@ -1,0 +1,33 @@
+-classpath
+'C:/Users/JB/Documents/NetBeansProjects/utBotContest/target/classes;C:/Users/JB/.m2/repository/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar;C:/Users/JB/.m2/repository/javax/vecmath/vecmath/1.5.1/vecmath-1.5.1.jar;C:/Users/JB/.m2/repository/org/jython/jython/1.2007/jython-1.2007.jar;C:/Users/JB/.m2/repository/cz/cuni/amis/pogamut/pogamut-base/3.7.0/pogamut-base-3.7.0.jar;C:/Users/JB/.m2/repository/cz/cuni/amis/xmllist/1.0.0/xmllist-1.0.0.jar;C:/Users/JB/.m2/repository/com/thoughtworks/xstream/xstream/1.3.1/xstream-1.3.1.jar;C:/Users/JB/.m2/repository/com/google/inject/guice/2.0/guice-2.0.jar;C:/Users/JB/.m2/repository/cz/cuni/amis/afsm/1.0.1/afsm-1.0.1.jar;C:/Users/JB/.m2/repository/cz/cuni/amis/javageom/3.7.0/javageom-3.7.0.jar;C:/Users/JB/.m2/repository/com/sun/script/jython-engine/1.0/jython-engine-1.0.jar;C:/Users/JB/.m2/repository/aopalliance/aopalliance/1.0/aopalliance-1.0.jar;C:/Users/JB/.m2/repository/org/apache/ant/ant-trax/1.8.0/ant-trax-1.8.0.jar;C:/Users/JB/.m2/repository/com/google/inject/extensions/guice-assisted-inject/2.0/guice-assisted-inject-2.0.jar;C:/Users/JB/.m2/repository/cz/cuni/amis/introspection/1.0.0/introspection-1.0.0.jar;C:/Users/JB/.m2/repository/commons-beanutils/commons-beanutils/1.8.3/commons-beanutils-1.8.3.jar;C:/Users/JB/.m2/repository/cz/cuni/amis/amis-path-finding/3.7.0/amis-path-finding-3.7.0.jar;C:/Users/JB/.m2/repository/net/sourceforge/saxon/saxon/9.1.0.8/saxon-9.1.0.8.jar;C:/Users/JB/.m2/repository/cz/cuni/amis/pogamut/pogamut-unreal/3.7.0/pogamut-unreal-3.7.0.jar;C:/Users/JB/.m2/repository/com/google/inject/extensions/guice-multibindings/2.0/guice-multibindings-2.0.jar;C:/Users/JB/.m2/repository/cz/cuni/amis/amis-utils/3.7.0/amis-utils-3.7.0.jar;C:/Users/JB/.m2/repository/xpp3/xpp3_min/1.1.4c/xpp3_min-1.1.4c.jar;C:/Users/JB/.m2/repository/cz/cuni/amis/pogamut/pogamut-ut2004/3.7.0/pogamut-ut2004-3.7.0.jar'
+-doclet
+'org.umlgraph.doclet.UmlGraphDoc'
+-docletpath
+'C:/Users/JB/.m2/repository/org/umlgraph/doclet/5.1/doclet-5.1.jar'
+-encoding
+'UTF-8'
+-protected
+-sourcepath
+'C:/Users/JB/Documents/NetBeansProjects/utBotContest/src/main/java'
+-views
+-author
+-bottom
+'Copyright &#169; 2017 <a href="http://amis.mff.cuni.cz">AMIS research group, Faculty of Mathematics and Physics, Charles University in Prague, Czech Republic</a>. All Rights Reserved.'
+-charset
+'UTF-8'
+-d
+'C:/Users/JB/Documents/NetBeansProjects/utBotContest/target/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'BotContest 1.0-SNAPSHOT API'
+-link
+'http://download.oracle.com/javase/6/docs/api'
+-link
+'http://diana.ms.mff.cuni.cz/maven-sites/pogamut/3.7.0/pogamut-ut2004/apidocs'
+-linkoffline
+'http://download.oracle.com/javase/6/docs/api' 'C:/Users/JB/Documents/NetBeansProjects/utBotContest/target/javadoc-bundle-options'
+-use
+-version
+-windowtitle
+'BotContest 1.0-SNAPSHOT API'
