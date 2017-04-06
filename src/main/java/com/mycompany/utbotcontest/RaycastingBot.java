@@ -184,6 +184,8 @@ public class RaycastingBot extends UT2004BotModuleController {
     public void botInitialized(GameInfo info, ConfigChange currentConfig, InitedMessage init) {
         // initialize rays for raycasting
         body.getConfigureCommands().setBotAppearance("HumanMaleA.EgyptMaleA");
+        getInitializeCommand().setDesiredSkill(5);
+                
         
         final int rayLengthMove = (int) (UnrealUtils.CHARACTER_COLLISION_RADIUS * 10);
         // settings for the rays
@@ -313,18 +315,34 @@ public class RaycastingBot extends UT2004BotModuleController {
             if (sensorLeft45) {
                 if (sensorRight45) {
                     // LEFT45, RIGHT45, FRONT are signaling
-                    move.turnHorizontal(bigTurn);
+                    for (int i = 0; i < bigTurn; i = i+2)
+                    {
+                        move.turnHorizontal(i);
+                    }
+                    //move.turnHorizontal(bigTurn);
                 } else {
                     // LEFT45, FRONT45 are signaling
-                    move.turnHorizontal(smallTurn);
+                    for (int i = 0; i < smallTurn; i = i+2)
+                    {
+                        move.turnHorizontal(i);
+                    }
+                    //move.turnHorizontal(smallTurn);
                 }
             } else {
                 if (sensorRight45) {
                     // RIGHT45, FRONT are signaling
-                    move.turnHorizontal(-smallTurn);
+                    for (int i = smallTurn; i > 0; i = i-2)
+                    {
+                        move.turnHorizontal(i);
+                    }
+                   // move.turnHorizontal(-smallTurn);
                 } else {
                     // FRONT is signaling
-                    move.turnHorizontal(smallTurn);
+                    for (int i = 0; i < smallTurn; i = i+2)
+                    {
+                        move.turnHorizontal(i);
+                    }
+                    //move.turnHorizontal(smallTurn);
                 }
             }
         } else {
@@ -334,12 +352,20 @@ public class RaycastingBot extends UT2004BotModuleController {
                     goForward();
                 } else {
                     // LEFT45 is signaling
-                    move.turnHorizontal(smallTurn);
+                    for (int i = 0; i < smallTurn; i = i+2)
+                    {
+                        move.turnHorizontal(i);
+                    }
+                    //move.turnHorizontal(smallTurn);
                 }
             } else {
                 if (sensorRight45) {
                     // RIGHT45 is signaling
-                    move.turnHorizontal(-smallTurn);
+                    for (int i = smallTurn; i > 0; i = i-2)
+                    {
+                        move.turnHorizontal(i);
+                    }
+                    //move.turnHorizontal(-smallTurn);
                 } else {
                     // no sensor is signaling
                     goForward();
@@ -385,6 +411,8 @@ public class RaycastingBot extends UT2004BotModuleController {
         weaponPrefs.addGeneralPref(UT2004ItemType.LINK_GUN, true);
         weaponPrefs.addGeneralPref(UT2004ItemType.ASSAULT_RIFLE, true);        
         weaponPrefs.addGeneralPref(UT2004ItemType.BIO_RIFLE, true);
+        
+        
     }
 
     /**
@@ -481,7 +509,7 @@ public class RaycastingBot extends UT2004BotModuleController {
         //log.info("Decision is: ENGAGE");
         //config.setName("Hunter [ENGAGE]");
 
-       /* boolean shooting = false;
+        boolean shooting = false;
         double distance = Double.MAX_VALUE;
         pursueCount = 0;
         
@@ -516,7 +544,7 @@ public class RaycastingBot extends UT2004BotModuleController {
         int decentDistance = Math.round(random.nextFloat() * 800) + 200;
         if (!enemy.isVisible() || !shooting || decentDistance < distance) {
             if (!runningToPlayer) {
-                move.moveTo(enemy);
+                navigation.navigate(enemy);
                 runningToPlayer = true;
             }
         } else {
@@ -524,11 +552,7 @@ public class RaycastingBot extends UT2004BotModuleController {
             move.stopMovement();
         }
         
-        item = null;*/
-       enemy = players.getNearestVisiblePlayer(players.getVisibleEnemies().values());
-       deplacementNat();
-       move.moveTo(enemy.getLocation());
-       System.out.println("jump");
+        item = null;
     }
 
     ///////////////
@@ -563,7 +587,7 @@ public class RaycastingBot extends UT2004BotModuleController {
         }
         if (enemy != null) {
         	bot.getBotName().setInfo("PURSUE");
-        	move.moveTo(enemy);
+        	navigation.navigate(enemy);
         	item = null;
         } else {
         	reset();
@@ -582,7 +606,7 @@ public class RaycastingBot extends UT2004BotModuleController {
         	stateRunAroundItems();
         } else {
         	bot.getBotName().setInfo("MEDKIT");
-        	move.moveTo(item);
+        	navigation.navigate(item);
         	this.item = item;
         }
     }
@@ -620,12 +644,12 @@ public class RaycastingBot extends UT2004BotModuleController {
         	log.warning("NO ITEM TO RUN FOR!");
         	if (move.isRunning()) return;
         	bot.getBotName().setInfo("RANDOM NAV");
-        	move.moveTo(navPoints.getRandomNavPoint());
+        	navigation.navigate(navPoints.getRandomNavPoint());
         } else {
         	this.item = item;
         	log.info("RUNNING FOR: " + item.getType().getName());
         	bot.getBotName().setInfo("ITEM: " + item.getType().getName() + "");
-        	move.moveTo(item); 	
+        	navigation.navigate(item);	
         }        
     }
 
