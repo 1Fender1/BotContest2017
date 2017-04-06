@@ -315,14 +315,14 @@ public class RaycastingBot extends UT2004BotModuleController {
             if (sensorLeft45) {
                 if (sensorRight45) {
                     // LEFT45, RIGHT45, FRONT are signaling
-                    for (int i = 0; i < bigTurn; i = i+2)
+                    for (int i = 0; i < bigTurn; i = i+5)
                     {
                         move.turnHorizontal(i);
                     }
                     //move.turnHorizontal(bigTurn);
                 } else {
                     // LEFT45, FRONT45 are signaling
-                    for (int i = 0; i < smallTurn; i = i+2)
+                    for (int i = 0; i < smallTurn; i = i+5)
                     {
                         move.turnHorizontal(i);
                     }
@@ -331,14 +331,14 @@ public class RaycastingBot extends UT2004BotModuleController {
             } else {
                 if (sensorRight45) {
                     // RIGHT45, FRONT are signaling
-                    for (int i = smallTurn; i > 0; i = i-2)
+                    for (int i = 0; i > (-smallTurn); i = i-5)
                     {
                         move.turnHorizontal(i);
                     }
                    // move.turnHorizontal(-smallTurn);
                 } else {
                     // FRONT is signaling
-                    for (int i = 0; i < smallTurn; i = i+2)
+                    for (int i = 0; i < smallTurn; i = i+5)
                     {
                         move.turnHorizontal(i);
                     }
@@ -352,7 +352,7 @@ public class RaycastingBot extends UT2004BotModuleController {
                     goForward();
                 } else {
                     // LEFT45 is signaling
-                    for (int i = 0; i < smallTurn; i = i+2)
+                    for (int i = 0; i < smallTurn; i = i+5)
                     {
                         move.turnHorizontal(i);
                     }
@@ -361,7 +361,7 @@ public class RaycastingBot extends UT2004BotModuleController {
             } else {
                 if (sensorRight45) {
                     // RIGHT45 is signaling
-                    for (int i = smallTurn; i > 0; i = i-2)
+                    for (int i = 0; i > (-smallTurn); i = i-5)
                     {
                         move.turnHorizontal(i);
                     }
