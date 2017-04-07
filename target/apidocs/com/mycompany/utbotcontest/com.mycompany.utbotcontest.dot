@@ -15,16 +15,10 @@ digraph G {
 <tr><td align="center" balign="center"> RaycastingBot </td></tr>
 		</table></td></tr>
 		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
-	// com.mycompany.utbotcontest.CustomControlServerModule
-	c1 [label=<<table title="com.mycompany.utbotcontest.CustomControlServerModule" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./CustomControlServerModule.html">
+	// com.mycompany.utbotcontest.Main
+	c1 [label=<<table title="com.mycompany.utbotcontest.Main" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Main.html">
 		<tr><td><table border="0" cellspacing="0" cellpadding="1">
-<tr><td align="center" balign="center"> CustomControlServerModule </td></tr>
-		</table></td></tr>
-		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
-	// com.mycompany.utbotcontest.CustomControlServer
-	c2 [label=<<table title="com.mycompany.utbotcontest.CustomControlServer" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./CustomControlServer.html">
-		<tr><td><table border="0" cellspacing="0" cellpadding="1">
-<tr><td align="center" balign="center"> CustomControlServer </td></tr>
+<tr><td align="center" balign="center"> Main </td></tr>
 		</table></td></tr>
 		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
 }
