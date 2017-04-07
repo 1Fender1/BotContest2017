@@ -3,15 +3,15 @@ package com.mycompany.utbotcontest;
 import javax.vecmath.Vector3d;
 
 import cz.cuni.amis.introspection.java.JProp;
-import cz.cuni.amis.pogamut.base.agent.impl.AgentId;
-import cz.cuni.amis.pogamut.base.communication.connection.impl.socket.SocketConnectionAddress;
 import cz.cuni.amis.pogamut.base.communication.worldview.listener.annotation.EventListener;
 import cz.cuni.amis.pogamut.base.utils.guice.AgentScoped;
+import cz.cuni.amis.pogamut.base3d.worldview.object.Location;
+import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.AgentConfig;
 import cz.cuni.amis.pogamut.ut2004.agent.module.utils.TabooSet;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.NavigationState;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.UT2004PathAutoFixer;
+import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.LevelGeometry;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.LevelGeometryModule;
-import cz.cuni.amis.pogamut.ut2004.agent.params.UT2004AgentParameters;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004BotModuleController;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Configuration;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.RemoveRay;
@@ -19,18 +19,14 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.AutoTra
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.ConfigChange;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.GameInfo;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.InitedMessage;
-import cz.cuni.amis.pogamut.ut2004.factory.guice.remoteagent.UT2004ServerFactory;
-import cz.cuni.amis.pogamut.ut2004.utils.UT2004BotRunner;
 import cz.cuni.amis.pogamut.ut2004.utils.UnrealUtils;
 import cz.cuni.amis.utils.exception.PogamutException;
 import cz.cuni.amis.utils.flag.FlagListener;
-import cz.cuni.amis.pogamut.ut2004.bot.*;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.UT2004ItemType;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Initialize;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Rotate;
-import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.SetSkin;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.StopShooting;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.BotDamaged;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.BotKilled;
@@ -63,10 +59,13 @@ import java.util.List;
  * @author Rudolf Kadlec aka ik
  * @author Jakub Gemrot aka Jimmy
  */
+
+
 @AgentScoped
 @Deprecated
 public class RaycastingBot extends UT2004BotModuleController {
-
+    
+    
     // Constants for rays' ids. It is allways better to store such values
     // in constants instead of using directly strings on multiple places of your
     // source code
@@ -75,8 +74,9 @@ public class RaycastingBot extends UT2004BotModuleController {
     //protected static final String LEFT90 = "left90Ray";
     protected static final String RIGHT45 = "right45Ray";
     //protected static final String RIGHT90 = "right90Ray";
+    protected static final String FRONTHOLE = "frontHole";
     
-    private AutoTraceRay left, front, right;
+    private AutoTraceRay left, front, right, frontHole;
     
     /**
      * Flag indicating that the bot has been just executed.
@@ -104,6 +104,9 @@ public class RaycastingBot extends UT2004BotModuleController {
      */
     @JProp
     private boolean sensorFront = false;
+    
+    @JProp
+    private boolean sensorFrontHole = false;
     /**
      * Whether the bot is moving. (Computed in the doLogic())
      */
@@ -115,6 +118,12 @@ public class RaycastingBot extends UT2004BotModuleController {
      */
     @JProp
     private boolean sensor = false;
+    
+    @JProp
+    private int rayLengthMove = (int) (UnrealUtils.CHARACTER_COLLISION_RADIUS * 10);
+    
+    @JProp
+    private int rayLengthHole = (int) (UnrealUtils.CHARACTER_COLLISION_RADIUS * 10);
     /**
      * How much time should we wait for the rotation to finish (milliseconds).
      */
@@ -185,13 +194,11 @@ public class RaycastingBot extends UT2004BotModuleController {
         // initialize rays for raycasting
         body.getConfigureCommands().setBotAppearance("HumanMaleA.EgyptMaleA");
         getInitializeCommand().setDesiredSkill(5);
-                
         
-        final int rayLengthMove = (int) (UnrealUtils.CHARACTER_COLLISION_RADIUS * 10);
         // settings for the rays
         boolean fastTrace = true;        // perform only fast trace == we just need true/false information
         boolean floorCorrection = true; // provide floor-angle correction for the ray (when the bot is running on the skewed floor, the ray gets rotated to match the skew)
-        boolean traceActor = false;      // whether the ray should collid with other actors == bots/players as well
+        boolean traceActor = true;      // whether the ray should collid with other actors == bots/players as well
 
         // 1. remove all previous rays, each bot starts by default with three
         // rays, for educational purposes we will set them manually
@@ -201,6 +208,8 @@ public class RaycastingBot extends UT2004BotModuleController {
         raycasting.createRay(LEFT45,  new Vector3d(1, -1, 0), rayLengthMove, fastTrace, floorCorrection, traceActor);
         raycasting.createRay(FRONT,   new Vector3d(1, 0, 0), rayLengthMove, fastTrace, floorCorrection, traceActor);
         raycasting.createRay(RIGHT45, new Vector3d(1, 1, 0), rayLengthMove, fastTrace, floorCorrection, traceActor);
+        raycasting.createRay(FRONTHOLE, new Vector3d(1, 0, -1), rayLengthHole, fastTrace, floorCorrection, traceActor);
+        
         // note that we will use only three of them, so feel free to experiment with LEFT90 and RIGHT90 for yourself
        // raycasting.createRay(LEFT90,  new Vector3d(0, -1, 0), rayLengthMove, fastTrace, floorCorrection, traceActor);
        // raycasting.createRay(RIGHT90, new Vector3d(0, 1, 0), rayLengthMove, fastTrace, floorCorrection, traceActor);
@@ -216,6 +225,7 @@ public class RaycastingBot extends UT2004BotModuleController {
                 left = raycasting.getRay(LEFT45);
                 front = raycasting.getRay(FRONT);
                 right = raycasting.getRay(RIGHT45);
+                frontHole = raycasting.getRay(FRONTHOLE);
             }
         });
         // have you noticed the FlagListener interface? The Pogamut is often using {@link Flag} objects that
@@ -253,7 +263,7 @@ public class RaycastingBot extends UT2004BotModuleController {
     
     private UT2004PathAutoFixer autoFixer;
     
-	private static int instanceCount = 0;
+    private static int instanceCount = 0;
 
     /**
      * Bot's preparation - called before the bot is connected to GB2004 and
@@ -284,13 +294,14 @@ public class RaycastingBot extends UT2004BotModuleController {
         if (!raycasting.getAllRaysInitialized().getFlag()) {
             return;
         }
-
         // once the rays are up and running, move according to them
+        
+        sensorFront = !front.isTraceActors() || front.isResult();
+        sensorLeft45 = !left.isTraceActors() || left.isResult();
+        sensorRight45 = !right.isTraceActors() || right.isResult();
+        sensorFrontHole = frontHole.isResult();
 
-        sensorFront = front.isResult();
-        sensorLeft45 = left.isResult();
-        sensorRight45 = right.isResult();
-
+        System.out.println("face : " + front.isTraceActors() + " droite : " + right.isTraceActors() + " gauche : " + left.isTraceActors());
         // is any of the sensor signalig?
         sensor = sensorFront || sensorLeft45 || sensorRight45;
 
@@ -315,35 +326,20 @@ public class RaycastingBot extends UT2004BotModuleController {
             if (sensorLeft45) {
                 if (sensorRight45) {
                     // LEFT45, RIGHT45, FRONT are signaling
-                    for (int i = 0; i < bigTurn; i = i+5)
-                    {
-                        move.turnHorizontal(i);
-                    }
-                    //move.turnHorizontal(bigTurn);
+                    move.turnHorizontal(bigTurn);
+                    
                 } else {
                     // LEFT45, FRONT45 are signaling
-                    for (int i = 0; i < smallTurn; i = i+5)
-                    {
-                        move.turnHorizontal(i);
-                    }
-                    //move.turnHorizontal(smallTurn);
+                    move.turnHorizontal(smallTurn);
                 }
             } else {
                 if (sensorRight45) {
                     // RIGHT45, FRONT are signaling
-                    for (int i = 0; i > (-smallTurn); i = i-5)
-                    {
-                        move.turnHorizontal(i);
-                    }
-                   // move.turnHorizontal(-smallTurn);
+                   move.turnHorizontal(-smallTurn);
                 } else {
                     // FRONT is signaling
-                    for (int i = 0; i < smallTurn; i = i+5)
-                    {
-                        move.turnHorizontal(i);
-                    }
-                    //move.turnHorizontal(smallTurn);
-                }
+                    move.turnHorizontal(smallTurn);
+               }
             }
         } else {
             if (sensorLeft45) {
@@ -352,28 +348,38 @@ public class RaycastingBot extends UT2004BotModuleController {
                     goForward();
                 } else {
                     // LEFT45 is signaling
-                    for (int i = 0; i < smallTurn; i = i+5)
-                    {
-                        move.turnHorizontal(i);
-                    }
-                    //move.turnHorizontal(smallTurn);
+                    move.turnHorizontal(smallTurn);
                 }
             } else {
                 if (sensorRight45) {
                     // RIGHT45 is signaling
-                    for (int i = 0; i > (-smallTurn); i = i-5)
-                    {
-                        move.turnHorizontal(i);
-                    }
-                    //move.turnHorizontal(-smallTurn);
+                    move.turnHorizontal(-smallTurn);
                 } else {
                     // no sensor is signaling
                     goForward();
                 }
             }
         }
+       /* if (sensorFrontHole)
+        {
+            move.turnHorizontal(bigTurn);
+        }*/
+        
         return;
     }
+/*
+    @Override
+    public LevelGeometry getLevelGeometry() {
+        return super.getLevelGeometry(); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public LevelGeometryModule getLevelGeometryModule() {
+        return super.getLevelGeometryModule(); //To change body of generated methods, choose Tools | Templates.
+    }*/
+    
+    
+    
     
     @Override
     public void prepareBot(UT2004Bot bot) {
@@ -424,8 +430,7 @@ public class RaycastingBot extends UT2004BotModuleController {
     public Initialize getInitializeCommand() {
         // just set the name of the bot and his skill level, 1 is the lowest, 7 is the highest
     	// skill level affects how well will the bot aim
-        //return new Initialize().setName("Hunter-" + (++instanceCount)).setDesiredSkill(5);
-        return new Initialize().setName("Terminator");
+        return new Initialize().setName("T80" + (instanceCount++)).setDesiredSkill(5);
     }
 
     /**
@@ -671,36 +676,4 @@ public class RaycastingBot extends UT2004BotModuleController {
         moving = true;
     }
 
-    public static void main(String args[]) throws PogamutException {
-        // wrapped logic for bots executions, suitable to run single bot in single JVM
-
-        
-        //new UT2004BotRunner(RaycastingBot.class, "Terminator").setMain(true).startAgent();
-        
-        String host = "localhost";//"locahost"
-        int port = 3000;
-
-        if (args.length > 0)
-        {
-            host = args[0];
-        }
-        if (args.length > 1)
-        {
-            String customPort = args[1];
-            try
-            {
-                port = Integer.parseInt(customPort);
-            }
-            catch (NumberFormatException e)
-            {
-                System.out.println("Invalid port. Expecting numeric. Resuming with default port: " + port);
-            }
-        }
-        
-        UT2004BotRunner runner = new UT2004BotRunner(RaycastingBot.class, "SuperTeam", host, port);
-        runner.setMain(true);
-        runner.setName("Terminator");
-        //runner.setLogLevel(Level.OFF);
-        runner.startAgent();
-    }
 }
