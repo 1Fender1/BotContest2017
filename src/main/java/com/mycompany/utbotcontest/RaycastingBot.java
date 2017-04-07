@@ -196,7 +196,7 @@ public class RaycastingBot extends UT2004BotModuleController {
         getInitializeCommand().setDesiredSkill(5);
         
         // settings for the rays
-        boolean fastTrace = true;        // perform only fast trace == we just need true/false information
+        boolean fastTrace = false;        // perform only fast trace == we just need true/false information
         boolean floorCorrection = true; // provide floor-angle correction for the ray (when the bot is running on the skewed floor, the ray gets rotated to match the skew)
         boolean traceActor = true;      // whether the ray should collid with other actors == bots/players as well
 
