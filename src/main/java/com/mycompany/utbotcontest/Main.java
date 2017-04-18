@@ -48,11 +48,11 @@ public class Main {
             }
         }
         
-        UT2004BotRunner runner = new UT2004BotRunner(RaycastingBot.class, "SuperTeam", host, port);
+        UT2004BotRunner runner = new UT2004BotRunner(Bot.class, "Runners", host, port);
         runner.setMain(true);
         runner.setName("Terminator");
         //runner.setLogLevel(Level.OFF);
-        runner.startAgent();
+        runner.startAgents(1);
     }
     
 }
