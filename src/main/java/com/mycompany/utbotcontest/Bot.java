@@ -344,7 +344,24 @@ public class Bot extends UT2004BotModuleController {
     	nmNav.navigate(np);
     	
     	return false;
-	}
+    }
+    
+    private boolean navigate(ILocated item) {
+    	//body.getCommunication().sendGlobalTextMessage("SPEED: " + info.getVelocity().size());
+    	
+    	if (nmNav.isNavigating()) return false;
+    	
+    	if (raycasting) {
+    		raycast();
+    	}
+    	
+    	NavPoint np = navPoints.getRandomNavPoint();
+    	nmNav.navigate(item);
+    	
+    	return false;
+    }
+    
+    
 
 	private void raycast() {
     	if (!levelGeometryModule.isInitialized()) return;
@@ -657,7 +674,8 @@ public class Bot extends UT2004BotModuleController {
         int decentDistance = Math.round(random.nextFloat() * 800) + 200;
         if (!enemy.isVisible() || !shooting || decentDistance < distance) {
             if (!runningToPlayer) {
-                nmNav.navigate(enemy);
+                //nmNav.navigate(enemy);
+                navigate(enemy);
                 runningToPlayer = true;
             }
         } else {
@@ -701,7 +719,8 @@ public class Bot extends UT2004BotModuleController {
         }
         if (enemy != null) {
         	bot.getBotName().setInfo("PURSUE");
-                nmNav.navigate(enemy);
+                //nmNav.navigate(enemy);
+                navigate(enemy);
         	item = null;
         } else {
         	reset();
@@ -723,7 +742,8 @@ public class Bot extends UT2004BotModuleController {
         	stateRunAroundItems();
         } else {
         	bot.getBotName().setInfo("MEDKIT");
-                nmNav.navigate(item);
+                //nmNav.navigate(item);
+                navigate(item);
         	this.item = item;
         }
     }
@@ -772,12 +792,14 @@ protected List<Item> itemsToRunAround = null;
         	log.warning("NO ITEM TO RUN FOR!");
         	if (nmNav.isNavigating()) return;
         	bot.getBotName().setInfo("RANDOM NAV");
-                nmNav.navigate(navPoints.getRandomNavPoint().getLocation());
+                //nmNav.navigate(navPoints.getRandomNavPoint().getLocation());
+                navigate();
         } else {
         	this.item = item;
         	log.info("RUNNING FOR: " + item.getType().getName());
         	bot.getBotName().setInfo("ITEM: " + item.getType().getName() + "");
-                nmNav.navigate(item.getLocation());
+                //nmNav.navigate(item);
+                navigate(item);
                 isMovingOn = true;
         }        
     }
