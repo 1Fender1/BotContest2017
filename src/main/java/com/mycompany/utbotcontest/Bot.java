@@ -6,8 +6,6 @@ import cz.cuni.amis.pogamut.base3d.worldview.object.ILocated;
 import cz.cuni.amis.pogamut.ut2004.agent.module.utils.TabooSet;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.NavigationState;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.UT2004PathAutoFixer;
-import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.AutoTraceRay;
-import cz.cuni.amis.pogamut.ut2004.utils.UnrealUtils;
 import cz.cuni.amis.utils.flag.FlagListener;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType;
@@ -21,7 +19,6 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Player;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.PlayerDamaged;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.PlayerKilled;
 import cz.cuni.amis.utils.collections.MyCollections;
-import static java.lang.Math.sqrt;
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
@@ -136,10 +133,6 @@ public class Bot extends UT2004BotModuleController {
     private UT2004PathAutoFixer autoFixer;
     
     private static int instanceCount = 0;
-    
-    private boolean isMovingOn = false;
-    
-    private ILocated currentLoc = null;
 
     
 	// ======
@@ -147,9 +140,9 @@ public class Bot extends UT2004BotModuleController {
 	// ======
 	
     private boolean speak            = false;
-    private boolean drawNavMesh      = true;
-    private boolean drawOffMeshLinks = false;
-    private boolean raycasting       = false;
+    private final boolean drawNavMesh      = true;
+    private final boolean drawOffMeshLinks = false;
+    private boolean raycasting = false;
     
     // =======
     // RUNTIME
@@ -331,22 +324,78 @@ public class Bot extends UT2004BotModuleController {
 		return true;
 	}
     
+    private boolean reachable(Item item)
+    {
+        Location botLoc = bot.getLocation();
+        Location itemLoc = item.getLocation();
+        
+        
+        List<ILocated> chemin = nmNav.getPathPlanner().computePath(botLoc, itemLoc).get();
+        if (chemin == null)
+        {
+            tabooItems.add(item);
+            return false;
+        }
+        else
+        {   
+            System.out.println("chemin");
+            for (ILocated loc : chemin)
+            {
+                System.out.println(loc);
+            }
+            return true;
+        }
+        //System.out.println("dernier point du parcour : " + chemin.get(chemin.size()).getLocation().toString() + " point visé" + item.getLocation().toString());
+        //return (chemin.get(chemin.size()).getLocation().equals(item.getLocation()));
+    }
+    
+        private boolean reachable(ILocated item)
+        {
+            Location botLoc = bot.getLocation();
+            Location itemLoc = item.getLocation();
+
+
+            List<ILocated> chemin = nmNav.getPathPlanner().computePath(botLoc, itemLoc).get();
+
+            if (chemin == null)
+            {
+                return false;
+            }
+            else
+            {   
+                System.out.println("chemin");
+                for (ILocated loc : chemin)
+                {
+                    System.out.println(loc);
+                }
+                return true;
+            }
+       
+        //System.out.println("dernier point du parcour : " + chemin.get(chemin.size()).getLocation().toString() + " point visé" + item.getLocation().toString());
+        //return (chemin.get(chemin.size()).getLocation().equals(item.getLocation()));
+    }
+    
     private boolean navigate() {
     	//body.getCommunication().sendGlobalTextMessage("SPEED: " + info.getVelocity().size());
     	
-    	if (nmNav.isNavigating()) return false;
+    	if (nmNav.isNavigating()) 
+            return false;
     	
     	if (raycasting) {
-    		raycast();
+            raycast();
     	}
     	
     	NavPoint np = navPoints.getRandomNavPoint();
-    	nmNav.navigate(np);
+        
+        if (!reachable(np))
+            return false;
+        
+        nmNav.navigate(np);
     	
     	return false;
     }
     
-    private boolean navigate(ILocated item) {
+     private boolean navigate(ILocated item) {
     	//body.getCommunication().sendGlobalTextMessage("SPEED: " + info.getVelocity().size());
     	
     	if (nmNav.isNavigating()) return false;
@@ -355,9 +404,32 @@ public class Bot extends UT2004BotModuleController {
     		raycast();
     	}
     	
-    	NavPoint np = navPoints.getRandomNavPoint();
-    	nmNav.navigate(item);
+        
+        
+    	if (!reachable(item))
+            return false;
     	
+        nmNav.navigate(item);
+        
+    	return false;
+    }
+    
+    private boolean navigate(Item item) {
+    	//body.getCommunication().sendGlobalTextMessage("SPEED: " + info.getVelocity().size());
+    	
+    	if (nmNav.isNavigating()) return false;
+    	
+    	if (raycasting) {
+    		raycast();
+    	}
+    	
+        
+        
+    	if (!reachable(item))
+            return false;
+    	
+        nmNav.navigate(item);
+        
     	return false;
     }
     
@@ -514,32 +586,7 @@ public class Bot extends UT2004BotModuleController {
         if (enemy.getId().equals(event.getId())) {
             enemy = null;
         }
-    }
-    
-        //return 0 if ray is not in touch with object, length's ray else
-    private double getRayLength(AutoTraceRay r)
-    {
-        double res = 0;
-        
-        if (!r.isResult())
-        {
-            return res;
-        }
-        else
-        {
-            Location agent = bot.getLocation();
-            Location destination = r.getHitLocation();
-            if (agent == null || destination == null)
-                return res;
-                
-            double x = destination.x-agent.x;
-            double y = destination.y-agent.y;
-            double z = destination.z-agent.z;
-            res = sqrt(x*x + y*y + z*z);
-            return res;
-        }
-    }
-    
+    }   
     
     
     /**
@@ -551,7 +598,6 @@ public class Bot extends UT2004BotModuleController {
         move.stopMovement();
         //interesting = null;
         itemsToRunAround = null;
-        isMovingOn = false;
     }
     
     @EventListener(eventClass=PlayerDamaged.class)
@@ -767,7 +813,14 @@ protected List<Item> itemsToRunAround = null;
         }
         // ADD ARMORS
         for (ItemType itemType : ItemType.Category.ARMOR.getTypes()) {
-        	interesting.addAll(items.getSpawnedItems(itemType).values());
+            if (info.getArmor() < 50)
+            {
+                interesting.addAll(items.getSpawnedItems(UT2004ItemType.SHIELD_PACK).values());
+            }
+            else
+            {
+                interesting.addAll(items.getSpawnedItems(UT2004ItemType.SUPER_SHIELD_PACK).values());
+            }
         }
         // ADD QUADS
         interesting.addAll(items.getSpawnedItems(UT2004ItemType.U_DAMAGE_PACK).values());
@@ -800,7 +853,6 @@ protected List<Item> itemsToRunAround = null;
         	bot.getBotName().setInfo("ITEM: " + item.getType().getName() + "");
                 //nmNav.navigate(item);
                 navigate(item);
-                isMovingOn = true;
         }        
     }
 
