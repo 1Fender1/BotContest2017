@@ -25,7 +25,11 @@ import java.util.ArrayList;
 import java.util.List;
 import cz.cuni.amis.pogamut.base.utils.guice.AgentScoped;
 import cz.cuni.amis.pogamut.base3d.worldview.object.Location;
+import cz.cuni.amis.pogamut.base3d.worldview.object.Rotation;
+import cz.cuni.amis.pogamut.unreal.communication.messages.UnrealId;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.LevelGeometry.RaycastResult;
+import cz.cuni.amis.pogamut.ut2004.agent.navigation.stuckdetector.AccUT2004DistanceStuckDetector;
+import cz.cuni.amis.pogamut.ut2004.agent.navigation.stuckdetector.UT2004TimeStuckDetector;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004BotModuleController;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Initialize;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.ConfigChange;
@@ -36,7 +40,11 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Self;
 import cz.cuni.amis.utils.StopWatch;
 import cz.cuni.amis.utils.exception.PogamutException;
 import cz.cuni.amis.utils.exception.PogamutInterruptedException;
-
+import cz.cuni.amis.pogamut.ut2004.agent.navigation.stuckdetector.UT2004PositionStuckDetector;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.GiveInventory;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.MyInventory;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Example of Simple Pogamut bot, that randomly walks around the map. Bot is
@@ -141,7 +149,7 @@ public class Bot extends UT2004BotModuleController {
 	
     private boolean speak            = false;
     private final boolean drawNavMesh      = true;
-    private final boolean drawOffMeshLinks = false;
+    private final boolean drawOffMeshLinks = true; // false
     private boolean raycasting = false;
     
     // =======
@@ -150,7 +158,7 @@ public class Bot extends UT2004BotModuleController {
 
     private int errorMsg = 0;
     
-	private boolean navMeshDrawn = false;    
+    private boolean navMeshDrawn = false;   
     private double waitForMesh = 0;
     private double waitingForMesh = 0;
     
@@ -161,11 +169,18 @@ public class Bot extends UT2004BotModuleController {
     
     private int sayState = -2;
     private double sayNext = 0;
-    
+   
     private boolean navigate = false;
     
     private List<Location> raycastLocations = new ArrayList<Location>();
 
+    
+    AccUT2004DistanceStuckDetector stuckDetector;
+    
+    private final boolean stuckBotWaiting = false;
+    private final boolean stuckEnabled = true;
+    
+    
     @Override
     public void mapInfoObtained() {
     	// YOU CAN USE navBuilder IN HERE
@@ -182,6 +197,7 @@ public class Bot extends UT2004BotModuleController {
         // initialize rays for raycasting
         body.getConfigureCommands().setBotAppearance("HumanMaleA.EgyptMaleA");
         getInitializeCommand().setDesiredSkill(5);
+        //config.setSpeedMultiplier(moveSpeed);
     }
     
         @Override
@@ -218,10 +234,14 @@ public class Bot extends UT2004BotModuleController {
         weaponPrefs.addGeneralPref(UT2004ItemType.FLAK_CANNON, true);        
         weaponPrefs.addGeneralPref(UT2004ItemType.ROCKET_LAUNCHER, true);
         weaponPrefs.addGeneralPref(UT2004ItemType.LINK_GUN, true);
-        weaponPrefs.addGeneralPref(UT2004ItemType.ASSAULT_RIFLE, true);        
+        weaponPrefs.addGeneralPref(UT2004ItemType.ASSAULT_RIFLE, false);        
         weaponPrefs.addGeneralPref(UT2004ItemType.BIO_RIFLE, true);
         
+        stuckDetector = new AccUT2004DistanceStuckDetector(bot);
+        stuckDetector.setBotWaiting(stuckBotWaiting);
+        stuckDetector.setEnabled(stuckEnabled);
         
+        nmNav.getPathExecutor().addStuckDetector(stuckDetector);
     }
 
     /**
@@ -253,7 +273,7 @@ public class Bot extends UT2004BotModuleController {
     			say("But there is probably some bogus in there... try to renegerate / fix and rerun the bot.");
     		}
     	}
-    	
+        
     	//UNCOMMENT FOR DETAILED INFO ABOUT NAVIGATION:
     	//nmNav.setLogLevel(Level.FINER);
     }
@@ -338,46 +358,40 @@ public class Bot extends UT2004BotModuleController {
         }
         else
         {   
-            System.out.println("chemin");
-            for (ILocated loc : chemin)
-            {
-                System.out.println(loc);
-            }
             return true;
         }
-        //System.out.println("dernier point du parcour : " + chemin.get(chemin.size()).getLocation().toString() + " point visé" + item.getLocation().toString());
-        //return (chemin.get(chemin.size()).getLocation().equals(item.getLocation()));
     }
     
-        private boolean reachable(ILocated item)
+    private boolean reachable(ILocated item)
+    {
+        Location botLoc = bot.getLocation();
+        Location itemLoc = item.getLocation();
+
+
+        List<ILocated> chemin = nmNav.getPathPlanner().computePath(botLoc, itemLoc).get();
+
+        if (chemin == null)
         {
-            Location botLoc = bot.getLocation();
-            Location itemLoc = item.getLocation();
+            return false;
+        }
+        else
+        {   
+            return true;
+        }
 
-
-            List<ILocated> chemin = nmNav.getPathPlanner().computePath(botLoc, itemLoc).get();
-
-            if (chemin == null)
-            {
-                return false;
-            }
-            else
-            {   
-                System.out.println("chemin");
-                for (ILocated loc : chemin)
-                {
-                    System.out.println(loc);
-                }
-                return true;
-            }
-       
-        //System.out.println("dernier point du parcour : " + chemin.get(chemin.size()).getLocation().toString() + " point visé" + item.getLocation().toString());
-        //return (chemin.get(chemin.size()).getLocation().equals(item.getLocation()));
-    }
+}
     
     private boolean navigate() {
     	//body.getCommunication().sendGlobalTextMessage("SPEED: " + info.getVelocity().size());
-    	
+        
+    	if (stuckDetector.isStuck())
+        {
+            stuckDetector.reset();
+            System.out.println("---------J'essaie d'atteindre se foutu point ! --------------");
+            return false;
+        }
+
+        
     	if (nmNav.isNavigating()) 
             return false;
     	
@@ -397,7 +411,14 @@ public class Bot extends UT2004BotModuleController {
     
      private boolean navigate(ILocated item) {
     	//body.getCommunication().sendGlobalTextMessage("SPEED: " + info.getVelocity().size());
-    	
+    	stuckDetector.setBotTarget(item);
+        if (stuckDetector.isStuck())
+        {
+            stuckDetector.reset();
+            System.out.println("---------J'essaie d'atteindre se foutu point ! --------------");
+            return false;
+        }
+        
     	if (nmNav.isNavigating()) return false;
     	
     	if (raycasting) {
@@ -416,7 +437,14 @@ public class Bot extends UT2004BotModuleController {
     
     private boolean navigate(Item item) {
     	//body.getCommunication().sendGlobalTextMessage("SPEED: " + info.getVelocity().size());
-    	
+    	stuckDetector.setBotTarget(item);
+        if (stuckDetector.isStuck())
+        {
+            stuckDetector.reset();
+            System.out.println("---------J'essaie d'atteindre se foutu point ! --------------");
+            return false;
+        }
+        
     	if (nmNav.isNavigating()) return false;
     	
     	if (raycasting) {
@@ -462,41 +490,41 @@ public class Bot extends UT2004BotModuleController {
 		int raycastCount = 0;
 		
 		for (int x : directions) {
-			for (int y : directions) {
-				for (int z : directions) {
-					// RULE OUT INVALID DIRECTIONS
-					if (x == 0 && y == 0 && z == 0) {
-						continue;
-					}
-					// DO RAYCAST
-					++raycastCount;
-					Location rayVector = new Location(x,y,z).getNormalized().scale(raycastDistance);
-					Location rayFrom = info.getLocation();
-					Location rayTo = info.getLocation().add(rayVector);
-					results.add(levelGeometryModule.getLevelGeometry().raycast(rayFrom, rayTo));
-				}	
-			}	
+                    for (int y : directions) {
+                        for (int z : directions) {
+                            // RULE OUT INVALID DIRECTIONS
+                            if (x == 0 && y == 0 && z == 0) {
+                                continue;
+                            }
+                            // DO RAYCAST
+                            ++raycastCount;
+                            Location rayVector = new Location(x,y,z).getNormalized().scale(raycastDistance);
+                            Location rayFrom = info.getLocation();
+                            Location rayTo = info.getLocation().add(rayVector);
+                            results.add(levelGeometryModule.getLevelGeometry().raycast(rayFrom, rayTo));
+                    }	
+                    }	
 		}
 		
 		watch.stop();
 		
 		for (RaycastResult raycast : results) {
-			if (raycast.hit) {
-				draw.drawLine(Color.RED, raycast.from, raycast.hitLocation);
-				draw.drawCube(Color.ORANGE, raycast.hitLocation, 8);
-				draw.drawPolygon(Color.orange, levelGeometryModule.getLevelGeometry().getTriangle(raycast.hitTriangle));
-			} else {
-				draw.drawLine(Color.BLUE, raycast.from, raycast.to);
-				draw.drawCube(Color.CYAN, raycast.to, 8);
-			}
+                    if (raycast.hit) {
+                        draw.drawLine(Color.RED, raycast.from, raycast.hitLocation);
+                        draw.drawCube(Color.ORANGE, raycast.hitLocation, 8);
+                        draw.drawPolygon(Color.orange, levelGeometryModule.getLevelGeometry().getTriangle(raycast.hitTriangle));
+                    } else {
+                        draw.drawLine(Color.BLUE, raycast.from, raycast.to);
+                        draw.drawCube(Color.CYAN, raycast.to, 8);
+                    }
 		}
 		
 		say(raycastCount + " raycasts in " + watch.timeStr());
 		
 		try {
-			Thread.sleep(3000);
+                    Thread.sleep(3000);
 		} catch (InterruptedException e) {
-			throw new PogamutInterruptedException(e, this);
+                    throw new PogamutInterruptedException(e, this);
 		}	
 	}
 
@@ -533,11 +561,11 @@ public class Bot extends UT2004BotModuleController {
 		if (!offMeshLinksDrawn) {
 			offMeshLinksDrawn = true;
 			
-			if (navMeshModule.getNavMesh().getOffMeshPoints().size() == 0) {
-				say("Ha! There are no off-mesh points / links within this map!");
-				return true;
-			}
-			
+                    if (navMeshModule.getNavMesh().getOffMeshPoints().size() == 0) {
+                            say("Ha! There are no off-mesh points / links within this map!");
+                            return true;
+                    }
+
 			say("Drawing OffMesh Links...");
     		navMeshModule.getNavMeshDraw().draw(false, true);
     		say("Okey, drawing commands issued, now we have to wait a bit till it gets drawn completely...");    		
@@ -720,7 +748,6 @@ public class Bot extends UT2004BotModuleController {
         int decentDistance = Math.round(random.nextFloat() * 800) + 200;
         if (!enemy.isVisible() || !shooting || decentDistance < distance) {
             if (!runningToPlayer) {
-                //nmNav.navigate(enemy);
                 navigate(enemy);
                 runningToPlayer = true;
             }
@@ -765,7 +792,6 @@ public class Bot extends UT2004BotModuleController {
         }
         if (enemy != null) {
         	bot.getBotName().setInfo("PURSUE");
-                //nmNav.navigate(enemy);
                 navigate(enemy);
         	item = null;
         } else {
@@ -788,7 +814,6 @@ public class Bot extends UT2004BotModuleController {
         	stateRunAroundItems();
         } else {
         	bot.getBotName().setInfo("MEDKIT");
-                //nmNav.navigate(item);
                 navigate(item);
         	this.item = item;
         }
@@ -811,13 +836,16 @@ protected List<Item> itemsToRunAround = null;
         	if (!weaponry.hasLoadedWeapon(itemType)) 
                     interesting.addAll(items.getSpawnedItems(itemType).values());
         }
+
+        
+        
         // ADD ARMORS
         for (ItemType itemType : ItemType.Category.ARMOR.getTypes()) {
-            if (info.getArmor() < 50)
+            if (info.getArmor() < game.getMaxLowArmor())
             {
                 interesting.addAll(items.getSpawnedItems(UT2004ItemType.SHIELD_PACK).values());
             }
-            else
+            else if (info.getArmor() < game.getMaxArmor())
             {
                 interesting.addAll(items.getSpawnedItems(UT2004ItemType.SUPER_SHIELD_PACK).values());
             }
@@ -826,32 +854,43 @@ protected List<Item> itemsToRunAround = null;
         interesting.addAll(items.getSpawnedItems(UT2004ItemType.U_DAMAGE_PACK).values());
         
         // ADD HEALTHS
-        
         for (ItemType itemType : ItemType.Category.HEALTH.getTypes())
         {
             if (info.getHealth() < 100) {
         	interesting.addAll(items.getSpawnedItems(UT2004ItemType.HEALTH_PACK).values());
             }
-            else if (info.getHealth() >= 100 && info.getHealth() < 199)
+            else if (info.getHealth() >= 100 && info.getHealth() < game.getMaxHealth())
             {
                 interesting.addAll(items.getSpawnedItems(UT2004ItemType.MINI_HEALTH_PACK).values());
             }
         }
-
+        
+        //ADD AMMO
+        for (ItemType itemType : ItemType.Category.AMMO.getTypes())
+        {
+            if (weaponry.hasLoadedWeapon(weaponry.getWeaponForAmmo(itemType)) && (weaponry.getAmmo(itemType) < weaponry.getMaxAmmo(itemType)))
+                interesting.addAll(items.getSpawnedItems(itemType).values());
+        }
+        
+        //ADD Adrénaline
+        if (info.getAdrenaline() < game.getMaxAdrenaline())
+        {
+            interesting.addAll(items.getSpawnedItems(UT2004ItemType.ADRENALINE_PACK).values());
+        }
+        
+        
         Item item = MyCollections.getRandom(tabooItems.filter(interesting));
-
+        
         
         if (item == null) {
         	log.warning("NO ITEM TO RUN FOR!");
         	if (nmNav.isNavigating()) return;
         	bot.getBotName().setInfo("RANDOM NAV");
-                //nmNav.navigate(navPoints.getRandomNavPoint().getLocation());
                 navigate();
         } else {
         	this.item = item;
         	log.info("RUNNING FOR: " + item.getType().getName());
         	bot.getBotName().setInfo("ITEM: " + item.getType().getName() + "");
-                //nmNav.navigate(item);
                 navigate(item);
         }        
     }
