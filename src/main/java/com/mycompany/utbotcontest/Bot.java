@@ -818,6 +818,145 @@ public class Bot extends UT2004BotModuleController {
         	this.item = item;
         }
     }
+    
+     protected int compareTo(Item item){
+        return (this.item.getType().compareTo(item.getType()));
+    }
+    
+     
+     //Listes qui vont contenir les différents items selon leur categorie.
+      protected List<Item> listWeapon = new ArrayList<Item>();
+      protected List<Item> listArmor = new ArrayList<Item>();
+      protected List<Item> listHealth = new ArrayList<Item>();
+      protected List<Item> listAmmo = new ArrayList<Item>();
+      protected List<Item> listAdrenaline = new ArrayList<Item>();
+      protected double min;
+      
+      //Ajout des items dans leur liste respective
+      protected void addItemsInList(List<Item> listI){
+        int a = 0;
+        int w = 0;
+        int h = 0;
+        int am = 0;
+        int ad = 0;
+        
+        for(Item elem : listI){
+          for(ItemType itemType : ItemType.Category.WEAPON.getTypes()){
+            if(elem.getType() == itemType){
+               listWeapon.add(elem);
+               w++;
+           }}
+          for(ItemType itemType : ItemType.Category.HEALTH.getTypes()){
+           if(elem.getType() == itemType){
+               listHealth.add(elem);
+               h++;
+           }}
+          for(ItemType itemType : ItemType.Category.ARMOR.getTypes()){
+           if(elem.getType() == itemType){
+               listArmor.add(elem);
+               a++;
+           }}
+          for(ItemType itemType : ItemType.Category.AMMO.getTypes()){
+           if(elem.getType() == itemType){
+               listAmmo.add(elem);
+               am++;
+           }}
+          for(ItemType itemType : ItemType.Category.ADRENALINE.getTypes()){
+           if(elem.getType() == itemType){
+               listAdrenaline.add(elem);
+               ad++;
+           }}
+        }
+        System.out.println("Armes:   "+w);
+        System.out.println("Vie:   "+h);
+        System.out.println("armure:   "+a);
+        System.out.println("munition:   "+am);
+        System.out.println("adrenaline:   "+ad);
+      }
+      
+      //Si on a besoin de vie, alors on sélectionne l'item le plus proche dans la liste vie
+      protected Item selectItemInListH(List<Item> listH){
+          Item itHealth = null;
+          if(info.getHealth() < 120 && !listH.isEmpty()){
+                min = info.getLocation().getDistance(listH.get(0).getLocation());
+                for(Item vie : listH){
+                    if(info.getHealth() < 100 && info.getLocation().getDistance(vie.getLocation()) <= min){
+                        itHealth = vie;
+                        min = info.getLocation().getDistance(vie.getLocation());
+                    }
+                    if(info.getHealth() >= 100 && vie.getType() == UT2004ItemType.MINI_HEALTH_PACK && info.getLocation().getDistance(vie.getLocation()) <= min){
+                        itHealth = vie;
+                        min = info.getLocation().getDistance(vie.getLocation());
+                    }
+                }
+            }
+            return itHealth;
+      }
+      
+      //On sélectionne l'item correspondant à l'arme préférrée du bot
+      protected Item selectItemInListW(List<Item> listW){
+          Item itWeapon = null;
+          if(!weaponry.hasWeapon(weaponPrefs.getGeneralPrefs().getPrefs().get(0).getWeapon())){
+            for(Item weap : listW){
+                if(weap.getType() == weaponPrefs.getGeneralPrefs().getPrefs().get(0).getWeapon() ){
+                    itWeapon = weap;
+                }
+            }
+        }
+          return itWeapon;
+      }
+      
+      //Si on a besoin d'armure, alors on sélectionne l'item correspondant à l'armure la plus proche
+      protected Item selectItemInListA(List<Item> listA){
+          Item itArmor = null;
+          if(info.getArmor() < 100 && !listA.isEmpty()){
+            min = info.getLocation().getDistance(listA.get(0).getLocation());
+            for(Item armor : listA){
+                if(info.getArmor() < 50 && info.getLocation().getDistance(armor.getLocation()) <= min){
+                    itArmor = armor;
+                    min = info.getLocation().getDistance(armor.getLocation());
+                }else{
+                    if(armor.getType() == UT2004ItemType.SUPER_SHIELD_PACK && info.getLocation().getDistance(armor.getLocation()) <= min){
+                        itArmor = armor;
+                        min = info.getLocation().getDistance(armor.getLocation());
+                    }
+                }
+            }
+        }
+          return itArmor;
+      }
+      
+      //On sélectionne l'item correspondant aux munitions que le bot a besoin
+      protected Item selectItemInListAm(List<Item> listAm){
+          Item itAmmo = null;
+          if(!listAm.isEmpty()){  
+            //min = info.getLocation().getDistance(listAmmo.get(0).getLocation());
+            for(Item ammo : listAm){
+                if(weaponry.hasWeapon(weaponry.getWeaponForAmmo(ammo.getType())) && weaponry.getAmmo(ammo.getType()) < weaponry.getMaxAmmo(ammo.getType())){
+                    itAmmo = ammo;
+                   // min = info.getLocation().getDistance(ammo.getLocation());
+                }
+            }
+        }
+          return itAmmo;
+      }
+      
+      protected Item selectItemInListAd(List<Item> listAd){
+          Item itAdrenaline = null;
+          return itAdrenaline;
+      }
+    
+    protected Item getNextItem (List<Item> listH,List<Item> listW,List<Item> listA,List<Item> listAm,List<Item> listAd){
+       
+        if(weaponry.getWeapons().size() == 2)
+            return selectItemInListW(listW);
+        else if(info.getHealth() < 100)
+            return selectItemInListH(listH);
+        else if(info.getArmor() < 50)
+            return selectItemInListA(listA);
+        else
+            return selectItemInListAm(listAm);
+    }
 
     ////////////////////////////
     // STATE RUN AROUND ITEMS //
@@ -879,8 +1018,9 @@ protected List<Item> itemsToRunAround = null;
         }
         
         
-        Item item = MyCollections.getRandom(tabooItems.filter(interesting));
-        
+       // Item item = MyCollections.getRandom(tabooItems.filter(interesting));
+        addItemsInList(interesting);
+        Item item = getNextItem(listHealth,listWeapon,listArmor,listAmmo,listAdrenaline);
         
         if (item == null) {
         	log.warning("NO ITEM TO RUN FOR!");
