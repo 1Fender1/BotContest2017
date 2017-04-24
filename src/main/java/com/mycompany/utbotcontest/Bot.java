@@ -875,9 +875,9 @@ public class Bot extends UT2004BotModuleController {
       }
       
       //Si on a besoin de vie, alors on sélectionne l'item le plus proche dans la liste vie
-      protected Item selectItemInListH(List<Item> listH){
+      protected Item selectItemInListHealth(List<Item> listH){
           Item itHealth = null;
-          if(info.getHealth() < 120 && !listH.isEmpty()){
+          if(info.getHealth() < 120){
                 min = info.getLocation().getDistance(listH.get(0).getLocation());
                 for(Item vie : listH){
                     if(info.getHealth() < 100 && info.getLocation().getDistance(vie.getLocation()) <= min){
@@ -893,8 +893,8 @@ public class Bot extends UT2004BotModuleController {
             return itHealth;
       }
       
-      //On sélectionne l'item correspondant à l'arme préférrée du bot
-      protected Item selectItemInListW(List<Item> listW){
+      //On sélectionne l'item correspondant à l'arme préférée du bot
+      protected Item selectItemInListWeapon(List<Item> listW){
           Item itWeapon = null;
           if(!weaponry.hasWeapon(weaponPrefs.getGeneralPrefs().getPrefs().get(0).getWeapon())){
             for(Item weap : listW){
@@ -907,9 +907,9 @@ public class Bot extends UT2004BotModuleController {
       }
       
       //Si on a besoin d'armure, alors on sélectionne l'item correspondant à l'armure la plus proche
-      protected Item selectItemInListA(List<Item> listA){
+      protected Item selectItemInListArmor(List<Item> listA){
           Item itArmor = null;
-          if(info.getArmor() < 100 && !listA.isEmpty()){
+          if(info.getArmor() < 100){
             min = info.getLocation().getDistance(listA.get(0).getLocation());
             for(Item armor : listA){
                 if(info.getArmor() < 50 && info.getLocation().getDistance(armor.getLocation()) <= min){
@@ -927,35 +927,41 @@ public class Bot extends UT2004BotModuleController {
       }
       
       //On sélectionne l'item correspondant aux munitions que le bot a besoin
-      protected Item selectItemInListAm(List<Item> listAm){
+      protected Item selectItemInListAmmo(List<Item> listAm){
           Item itAmmo = null;
-          if(!listAm.isEmpty()){  
-            //min = info.getLocation().getDistance(listAmmo.get(0).getLocation());
+        //min = info.getLocation().getDistance(listAmmo.get(0).getLocation());
             for(Item ammo : listAm){
-                if(weaponry.hasWeapon(weaponry.getWeaponForAmmo(ammo.getType())) && weaponry.getAmmo(ammo.getType()) < weaponry.getMaxAmmo(ammo.getType())){
+                if(weaponry.hasLoadedWeapon(weaponry.getWeaponForAmmo(ammo.getType())) && weaponry.getAmmo(ammo.getType()) < weaponry.getMaxAmmo(ammo.getType())){
                     itAmmo = ammo;
                    // min = info.getLocation().getDistance(ammo.getLocation());
                 }
-            }
-        }
+          }
           return itAmmo;
       }
       
-      protected Item selectItemInListAd(List<Item> listAd){
+      protected Item selectItemInListAdrenaline(List<Item> listAd){
           Item itAdrenaline = null;
+              min = info.getLocation().getDistance(listAd.get(0).getLocation());
+              for(Item ad: listAd){
+                  if(info.getLocation().getDistance(ad.getLocation()) < min)
+                    itAdrenaline = ad;
+              }
           return itAdrenaline;
       }
     
     protected Item getNextItem (List<Item> listH,List<Item> listW,List<Item> listA,List<Item> listAm,List<Item> listAd){
        
-        if(weaponry.getWeapons().size() == 2)
-            return selectItemInListW(listW);
-        else if(info.getHealth() < 100)
-            return selectItemInListH(listH);
-        else if(info.getArmor() < 50)
-            return selectItemInListA(listA);
-        else
-            return selectItemInListAm(listAm);
+        if(weaponry.getWeapons().size() == 2 && !listW.isEmpty())
+            return selectItemInListWeapon(listW);
+        else if(info.getHealth() < 100 && !listH.isEmpty())
+            return selectItemInListHealth(listH);
+        else if(info.getArmor() < 50 && !listA.isEmpty())
+            return selectItemInListArmor(listA);
+        else if(!listAm.isEmpty())
+            return selectItemInListAmmo(listAm);
+        else if(!listAd.isEmpty() && info.getAdrenaline() < 20)
+            return selectItemInListAdrenaline(listAd);
+        else return null;
     }
 
     ////////////////////////////
@@ -1022,6 +1028,7 @@ protected List<Item> itemsToRunAround = null;
         addItemsInList(interesting);
         Item item = getNextItem(listHealth,listWeapon,listArmor,listAmmo,listAdrenaline);
         
+        listHealth.clear(); listWeapon.clear(); listArmor.clear(); listAmmo.clear(); listAdrenaline.clear();
         if (item == null) {
         	log.warning("NO ITEM TO RUN FOR!");
         	if (nmNav.isNavigating()) return;
