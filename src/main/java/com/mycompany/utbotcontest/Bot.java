@@ -333,12 +333,10 @@ public class Bot extends UT2004BotModuleController {
         return pursueCount;
     }
 
-    @Override
     public AdvancedLocomotion getMove() {
         return move;
     }
 
-    @Override
     public CompleteBotCommandsWrapper getBody() {
         return body;
     }
@@ -350,5 +348,7 @@ public class Bot extends UT2004BotModuleController {
     public void setNavigate(boolean navigate) {
         this.navigate = navigate;
     }
-
+    
+    
+    
 }
