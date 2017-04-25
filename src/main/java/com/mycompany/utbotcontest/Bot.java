@@ -834,44 +834,44 @@ public class Bot extends UT2004BotModuleController {
       
       //Ajout des items dans leur liste respective
       protected void addItemsInList(List<Item> listI){
-        int a = 0;
-        int w = 0;
-        int h = 0;
-        int am = 0;
-        int ad = 0;
+        int nbA = 0;
+        int nbW = 0;
+        int nbH = 0;
+        int nbAM = 0;
+        int nbAD = 0;
         
         for(Item elem : listI){
           for(ItemType itemType : ItemType.Category.WEAPON.getTypes()){
             if(elem.getType() == itemType){
                listWeapon.add(elem);
-               w++;
+               nbW++;
            }}
           for(ItemType itemType : ItemType.Category.HEALTH.getTypes()){
            if(elem.getType() == itemType){
                listHealth.add(elem);
-               h++;
+               nbH++;
            }}
           for(ItemType itemType : ItemType.Category.ARMOR.getTypes()){
            if(elem.getType() == itemType){
                listArmor.add(elem);
-               a++;
+               nbA++;
            }}
           for(ItemType itemType : ItemType.Category.AMMO.getTypes()){
            if(elem.getType() == itemType){
                listAmmo.add(elem);
-               am++;
+               nbAM++;
            }}
           for(ItemType itemType : ItemType.Category.ADRENALINE.getTypes()){
            if(elem.getType() == itemType){
                listAdrenaline.add(elem);
-               ad++;
+               nbAD++;
            }}
         }
-        System.out.println("Armes:   "+w);
-        System.out.println("Vie:   "+h);
-        System.out.println("armure:   "+a);
-        System.out.println("munition:   "+am);
-        System.out.println("adrenaline:   "+ad);
+        System.out.println("Armes:   "+nbW);
+        System.out.println("Vie:   "+nbH);
+        System.out.println("armure:   "+nbA);
+        System.out.println("munition:   "+nbAM);
+        System.out.println("adrenaline:   "+nbAD);
       }
       
       //Si on a besoin de vie, alors on sélectionne l'item le plus proche dans la liste vie
@@ -929,11 +929,12 @@ public class Bot extends UT2004BotModuleController {
       //On sélectionne l'item correspondant aux munitions que le bot a besoin
       protected Item selectItemInListAmmo(List<Item> listAm){
           Item itAmmo = null;
-        //min = info.getLocation().getDistance(listAmmo.get(0).getLocation());
+          min = info.getLocation().getDistance(listAmmo.get(0).getLocation());
             for(Item ammo : listAm){
-                if(weaponry.hasLoadedWeapon(weaponry.getWeaponForAmmo(ammo.getType())) && weaponry.getAmmo(ammo.getType()) < weaponry.getMaxAmmo(ammo.getType())){
+                if(weaponry.hasLoadedWeapon(weaponry.getWeaponForAmmo(ammo.getType())) && weaponry.getAmmo(ammo.getType()) < weaponry.getMaxAmmo(ammo.getType())
+                        && info.getLocation().getDistance(ammo.getLocation()) <= min){
                     itAmmo = ammo;
-                   // min = info.getLocation().getDistance(ammo.getLocation());
+                    min = info.getLocation().getDistance(ammo.getLocation());
                 }
           }
           return itAmmo;
@@ -943,14 +944,16 @@ public class Bot extends UT2004BotModuleController {
           Item itAdrenaline = null;
               min = info.getLocation().getDistance(listAd.get(0).getLocation());
               for(Item ad: listAd){
-                  if(info.getLocation().getDistance(ad.getLocation()) < min)
+                  if(info.getLocation().getDistance(ad.getLocation()) <= min){
                     itAdrenaline = ad;
+                    min = info.getLocation().getDistance(ad.getLocation());
+                  }
               }
           return itAdrenaline;
       }
     
     protected Item getNextItem (List<Item> listH,List<Item> listW,List<Item> listA,List<Item> listAm,List<Item> listAd){
-       
+       Item item = null;
         if(weaponry.getWeapons().size() == 2 && !listW.isEmpty())
             return selectItemInListWeapon(listW);
         else if(info.getHealth() < 100 && !listH.isEmpty())
@@ -961,7 +964,16 @@ public class Bot extends UT2004BotModuleController {
             return selectItemInListAmmo(listAm);
         else if(!listAd.isEmpty() && info.getAdrenaline() < 20)
             return selectItemInListAdrenaline(listAd);
-        else return null;
+        else if(!listW.isEmpty()){
+            min = info.getLocation().getDistance(listW.get(0).getLocation());
+            for(Item it : listW){
+                if(info.getLocation().getDistance(it.getLocation()) <= min){
+                    item = it;
+                    min = info.getLocation().getDistance(it.getLocation());
+                }
+            }
+            return item;
+        }else return null;
     }
 
     ////////////////////////////
@@ -988,7 +1000,7 @@ protected List<Item> itemsToRunAround = null;
         for (ItemType itemType : ItemType.Category.ARMOR.getTypes()) {
             if (info.getArmor() < game.getMaxLowArmor())
             {
-                interesting.addAll(items.getSpawnedItems(UT2004ItemType.SHIELD_PACK).values());
+                interesting.addAll(items.getSpawnedItems(itemType).values());
             }
             else if (info.getArmor() < game.getMaxArmor())
             {
@@ -1002,7 +1014,7 @@ protected List<Item> itemsToRunAround = null;
         for (ItemType itemType : ItemType.Category.HEALTH.getTypes())
         {
             if (info.getHealth() < 100) {
-        	interesting.addAll(items.getSpawnedItems(UT2004ItemType.HEALTH_PACK).values());
+        	interesting.addAll(items.getSpawnedItems(itemType).values());
             }
             else if (info.getHealth() >= 100 && info.getHealth() < game.getMaxHealth())
             {
@@ -1027,8 +1039,9 @@ protected List<Item> itemsToRunAround = null;
        // Item item = MyCollections.getRandom(tabooItems.filter(interesting));
         addItemsInList(interesting);
         Item item = getNextItem(listHealth,listWeapon,listArmor,listAmmo,listAdrenaline);
-        
         listHealth.clear(); listWeapon.clear(); listArmor.clear(); listAmmo.clear(); listAdrenaline.clear();
+        min = 0;
+        
         if (item == null) {
         	log.warning("NO ITEM TO RUN FOR!");
         	if (nmNav.isNavigating()) return;
