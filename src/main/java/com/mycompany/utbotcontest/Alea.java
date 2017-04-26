@@ -20,7 +20,7 @@ public class Alea {
     //return true with a probability of f in percent
     public boolean pourcentDeChance(double f) {
         
-        if(rand.nextInt(100)<f)
+        if(Math.random()*100<f)
             return true;
         else
             return false;
@@ -35,10 +35,19 @@ public class Alea {
             return false;
     }
     
-    
+    public int indiceAlea(double tabProba[]){//Genere aleatoirement un indice pour un tableau ou chaque case est une probabilité sur 1
+        double r=Math.random();
+        double somme = 0.0;
+        int i =0;
+        while(r>=somme){
+            somme=somme+tabProba[i];
+            i++;
+        }
+        return i-1;
+    }
     
     //test function to debug
-    public void test ()
+    public void testPourcentDeChance()
     {
         boolean[] tabVal = new boolean[10000];
         int nbTrue = 0;
@@ -53,9 +62,21 @@ public class Alea {
         System.out.println("il y a " + nbTrue + " true");
     }
     
+     public void testIndiceAlea()
+    {
+        double tabVal[] ={0.35,0.15,0.24,0.26};
+        
+        int[] tabRes =new int[4];
+        for (int i = 0 ; i < 100000; i++)
+        {
+            tabRes[indiceAlea(tabVal)]++;
+        }
+        System.out.println("Res obtenu/Res Attendu : " + tabRes[0] + "/35000 ;" + tabRes[1] + "/15000 ; "+ tabRes[2] + "/24000 ; " + tabRes[3] + "/26000");
+    }
+    
     public static void main (String[] args)
     {
         Alea r = new Alea();
-        r.test();
+        r.testPourcentDeChance();
     }
 }
