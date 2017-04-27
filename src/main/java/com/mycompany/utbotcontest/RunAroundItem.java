@@ -1,5 +1,6 @@
 package com.mycompany.utbotcontest;
 
+import static com.mycompany.utbotcontest.ProbabilitesArmes.referencesArmes;
 import cz.cuni.amis.pogamut.base.utils.logging.LogCategory;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weaponry;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.AgentInfo;
@@ -43,6 +44,8 @@ public class RunAroundItem {
     
     private LogCategory log;
     
+    private ProbabilitesArmes probaA;
+    
     public RunAroundItem(Bot mainBot, BotNavigation navBot)
     {
         this.bot = mainBot.getBot();
@@ -64,6 +67,8 @@ public class RunAroundItem {
         this.game = mainBot.getGame();
         
         this.log = mainBot.getLog();
+        
+        this.probaA = mainBot.getProbaArmes();
     }
     
     
@@ -75,6 +80,7 @@ public class RunAroundItem {
       protected List<Item> listHealth = new ArrayList<Item>();
       protected List<Item> listAmmo = new ArrayList<Item>();
       protected List<Item> listAdrenaline = new ArrayList<Item>();
+      protected Item damage = null;
       protected double min;
       
       
@@ -85,6 +91,7 @@ public class RunAroundItem {
         int h = 0;
         int am = 0;
         int ad = 0;
+        int d = 0;
         
         for(Item elem : listI){
           for(ItemType itemType : ItemType.Category.WEAPON.getTypes()){
@@ -112,12 +119,17 @@ public class RunAroundItem {
                listAdrenaline.add(elem);
                ad++;
            }}
+          if (elem.getType() == UT2004ItemType.U_DAMAGE_PACK){
+              damage = elem;
+              d++;
+          }
         }
         System.out.println("Armes:   "+w);
         System.out.println("Vie:   "+h);
         System.out.println("armure:   "+a);
         System.out.println("munition:   "+am);
         System.out.println("adrenaline:   "+ad);
+        System.out.println("damage:   "+d);
       }
       
       //Si on a besoin de vie, alors on sélectionne l'item le plus proche dans la liste vie
@@ -142,13 +154,23 @@ public class RunAroundItem {
       //On sélectionne l'item correspondant à l'arme préférée du bot
       protected Item selectItemInListWeapon(List<Item> listW){
           Item itWeapon = null;
-          if(!weaponry.hasWeapon(weaponPrefs.getGeneralPrefs().getPrefs().get(0).getWeapon())){
+          //On va chercher l'arme ayant la proba la plus élevée
+          min = referencesArmes.get(0).getProbabilite();
+          for(ProbabilitesArmes pa : referencesArmes)
+            for(Item weap : listW){
+              if(weap.getType().getName().equals(pa.getNom().getName()) && pa.getProbabilite()>=min){
+                  itWeapon = weap;
+                  min = pa.getProbabilite();
+              }
+          }
+          //On va chercher l'arme préferée du bot (config de départ)
+          /*if(!weaponry.hasWeapon(weaponPrefs.getGeneralPrefs().getPrefs().get(0).getWeapon())){
             for(Item weap : listW){
                 if(weap.getType() == weaponPrefs.getGeneralPrefs().getPrefs().get(0).getWeapon() ){
                     itWeapon = weap;
                 }
             }
-        }
+          }*/
           return itWeapon;
       }
       
@@ -200,14 +222,16 @@ public class RunAroundItem {
        Item item = null;
         if(weaponry.getWeapons().size() == 2 && !listW.isEmpty())
             return selectItemInListWeapon(listW);
-        else if(info.getHealth() < 100 && !listH.isEmpty())
+        else if(info.getHealth() <= 100 && !listH.isEmpty())
             return selectItemInListHealth(listH);
-        else if(info.getArmor() < 50 && !listA.isEmpty())
+        else if(info.getArmor() <= 50 && !listA.isEmpty())
             return selectItemInListArmor(listA);
         else if(!listAm.isEmpty())
             return selectItemInListAmmo(listAm);
         else if(!listAd.isEmpty() && info.getAdrenaline() < 20)
             return selectItemInListAdrenaline(listAd);
+        else if(damage != null && navBot.reachable(damage))
+            return damage;
         else if(!listW.isEmpty()){
             min = info.getLocation().getDistance(listW.get(0).getLocation());
             for(Item it : listW){
@@ -284,7 +308,7 @@ protected List<Item> itemsToRunAround = null;
         addItemsInList(interesting);
         Item item = getNextItem (listHealth,listWeapon,listArmor,listAmmo,listAdrenaline);
         listHealth.clear(); listWeapon.clear(); listArmor.clear(); listAmmo.clear(); listAdrenaline.clear();
-        min = 0;
+        min = 0; damage = null;
         
         if (item == null) {
         	log.warning("NO ITEM TO RUN FOR!");

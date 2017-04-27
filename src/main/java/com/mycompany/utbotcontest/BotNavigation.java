@@ -150,7 +150,7 @@ public class BotNavigation {
 	
     
     
-    private boolean reachable(Item item)
+    public boolean reachable(Item item)
     {
         Location botLoc = bot.getLocation();
         Location itemLoc = item.getLocation();
@@ -168,7 +168,7 @@ public class BotNavigation {
         }
     }
     
-    private boolean reachable(ILocated item)
+    public boolean reachable(ILocated item)
     {
         Location botLoc = bot.getLocation();
         Location itemLoc = item.getLocation();
