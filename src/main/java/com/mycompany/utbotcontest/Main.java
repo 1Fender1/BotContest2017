@@ -28,7 +28,7 @@ public class Main {
         public static void main(String args[]) throws PogamutException {
         // wrapped logic for bots executions, suitable to run single bot in single JVM
 
-        String host = "localhost";//"locahost"
+        String host = "localhost";
         int port = 3000;
 
         if (args.length > 0)

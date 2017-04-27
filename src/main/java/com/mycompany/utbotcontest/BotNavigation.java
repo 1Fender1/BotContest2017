@@ -63,6 +63,8 @@ public class BotNavigation {
         
     public BotNavigation(Bot mainBot, MeshInit meshInit)
     {
+        this.mainBot = mainBot;
+        
         bot = mainBot.getBot();
         tabooItems = new TabooSet<Item>(bot);
         stuckDetector = new AccUT2004DistanceStuckDetector(bot);

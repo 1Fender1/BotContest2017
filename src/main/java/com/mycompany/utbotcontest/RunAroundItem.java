@@ -48,6 +48,8 @@ public class RunAroundItem {
     
     public RunAroundItem(Bot mainBot, BotNavigation navBot)
     {
+        this.mainBot = mainBot;
+        
         this.bot = mainBot.getBot();
         
         this.info = mainBot.getInfo();
