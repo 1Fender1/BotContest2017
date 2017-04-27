@@ -16,11 +16,15 @@
  */
 package com.mycompany.utbotcontest;
 
+import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weapon;
+import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weaponry;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.UT2004ItemType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 
 /**
@@ -41,12 +45,13 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
         this.nbVictoire = nbV;
         this.nbDefaite = nbD;
     }
-    static List<ProbabilitesArmes> listeArmes = new ArrayList<ProbabilitesArmes>();
+    public static List<ProbabilitesArmes> referencesArmes = new ArrayList<ProbabilitesArmes>();
+    public static List<ProbabilitesArmes> inventaireArmes = new ArrayList<ProbabilitesArmes>();
     
     private double epsilon = 0.2;
     private double randNumber = 0;
     
-    private static void initProbaWeapon() {
+    public void initProbabilitesA() {
         ProbabilitesArmes rocket = new ProbabilitesArmes(UT2004ItemType.ROCKET_LAUNCHER, 0.7, 0.1, 0, 0);
         ProbabilitesArmes flak = new ProbabilitesArmes(UT2004ItemType.FLAK_CANNON, 0.7, 0.2, 0, 0);
         ProbabilitesArmes lightning = new ProbabilitesArmes(UT2004ItemType.LIGHTNING_GUN, 0.7, 0.2, 0, 0);
@@ -56,58 +61,58 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
         ProbabilitesArmes shock = new ProbabilitesArmes(UT2004ItemType.SHOCK_RIFLE, 0.4, 0.5, 0, 0);
         ProbabilitesArmes bio = new ProbabilitesArmes(UT2004ItemType.BIO_RIFLE, 0.4, 0.5, 0, 0);
         ProbabilitesArmes shield = new ProbabilitesArmes(UT2004ItemType.SHIELD_GUN, 0.4, 0.5, 0, 0);
-        listeArmes.add(rocket);
-        listeArmes.add(flak);
-        listeArmes.add(lightning);
-        listeArmes.add(minigun);
-        listeArmes.add(link);
-        listeArmes.add(assault);
-        listeArmes.add(shock);
-        listeArmes.add(bio);
-        listeArmes.add(shield);
-        Collections.sort(listeArmes);
-        Collections.reverse(listeArmes);
+        referencesArmes.add(rocket);
+        referencesArmes.add(flak);
+        referencesArmes.add(lightning);
+        referencesArmes.add(minigun);
+        referencesArmes.add(link);
+        referencesArmes.add(assault);
+        referencesArmes.add(shock);
+        referencesArmes.add(bio);
+        referencesArmes.add(shield);
+        Collections.sort(referencesArmes);
+        Collections.reverse(referencesArmes);
     }
     
     //GETTER  
-    public static UT2004ItemType getNom(ProbabilitesArmes pa) {
-        return pa.nom;
+    public UT2004ItemType getNom() {
+        return this.nom;
     }
-    public double getProbabilite(ProbabilitesArmes pa) {
-        return pa.probabilite;
+    public double getProbabilite() {
+        return this.probabilite;
     }
-    public double getPoids(ProbabilitesArmes pa) {
-        return pa.poids;
+    public double getPoids() {
+        return this.poids;
     }
-    public int getNbVictoire(ProbabilitesArmes pa) {
-        return pa.nbVictoire;
+    public int getNbVictoire() {
+        return this.nbVictoire;
     }
-    public int getNbDefaite(ProbabilitesArmes pa) {
-        return pa.nbDefaite;
+    public int getNbDefaite() {
+        return this.nbDefaite;
     }
     
     //INCREMENTE LE NOMBRE DE VICTOIRE DE L'ARME
-    public static void nbVIncrement(String weapon) {
+    public void nbVIncrement(String weapon) {
         int index = 0;
-        Iterator<ProbabilitesArmes> it = listeArmes.iterator();
+        Iterator<ProbabilitesArmes> it = referencesArmes.iterator();
         while (it.hasNext() && !it.next().nom.getGroup().getName().equals(weapon)) {
             index++;
         }
-        ProbabilitesArmes update = listeArmes.get(index);
+        ProbabilitesArmes update = referencesArmes.get(index);
         update.nbVictoire++;
-        listeArmes.set(index, update);
+        referencesArmes.set(index, update);
     }
     
     //INCREMENTE LE NOMBRE DE DEFAITE DE L'ARME
-    public static void nbDIncrement(String weapon) {
+    public void nbDIncrement(String weapon) {
         int index = 0;
-        Iterator<ProbabilitesArmes> it = listeArmes.iterator();
+        Iterator<ProbabilitesArmes> it = referencesArmes.iterator();
         while (it.hasNext() && !it.next().nom.getGroup().getName().equals(weapon)) {
             index++;
         }
-        ProbabilitesArmes update = listeArmes.get(index);
+        ProbabilitesArmes update = referencesArmes.get(index);
         update.nbDefaite++;
-        listeArmes.set(index, update);
+        referencesArmes.set(index, update);
     }
     
     @Override
@@ -121,57 +126,51 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
         return new Double(probabilite).compareTo(o.probabilite);
     }
     
+     public void inventaireBot(Weaponry w) {
+        Weapon wp = null;
+        int index = 0;
+        ProbabilitesArmes pa = null;
+        Iterator<ProbabilitesArmes> it = referencesArmes.iterator();
+        for (Iterator i = w.getWeapons().entrySet().iterator(); i.hasNext();) {
+            Map.Entry couple = (Map.Entry)i.next();
+            wp = (Weapon) couple.getValue();       
+            while (it.hasNext() && !it.next().nom.getGroup().getName().equals(wp.getGroup().getName())) {
+                index++;
+            }
+            pa = referencesArmes.get(index);
+            inventaireArmes.add(pa);  
+        }
+    }
+    
     //CHOIX DE L'ARME
-    public UT2004ItemType choixArme() {
-        randNumber = Math.random();
-        ProbabilitesArmes pa;
+    public UT2004ItemType choixArme(Weaponry w) {
+        double randNumber = Math.random();
+        ProbabilitesArmes pa = null;
         Random r = new Random();
         int randomWeapon;
+        inventaireBot(w);
         if (randNumber < epsilon) {
-            randomWeapon = r.nextInt(9);
-            pa = listeArmes.get(randomWeapon);
+            randomWeapon = r.nextInt(inventaireArmes.size());
+            pa = inventaireArmes.get(randomWeapon);
         }
         else {
-           Collections.sort(listeArmes);
-           Collections.reverse(listeArmes);
-           pa = listeArmes.get(0);
+           Collections.sort(inventaireArmes);
+           Collections.reverse(inventaireArmes);
+           pa = inventaireArmes.get(0);
         }
         return pa.nom;
     }
     
     //MAJ PROBABILITE DE L'ARME
-    public static void updateProba(String weapon, int nb) {
+    public void updateProba(String weapon) {
         ProbabilitesArmes pa;
         double newP;
         int index = 0;
-        Iterator<ProbabilitesArmes> it = listeArmes.iterator();
-        while (it.hasNext() && !it.next().nom.equals(weapon)) {
+        Iterator<ProbabilitesArmes> it = referencesArmes.iterator();
+        while (it.hasNext() && !it.next().nom.getGroup().getName().equals(weapon)) {
             index++;
         }
-        ProbabilitesArmes update = listeArmes.get(index);
-        //PERDU => BAISSE DE LA PROBABILITE
-        if (nb == 0) {
-            newP = (update.probabilite * update.poids + update.nbVictoire) / (update.poids + update.nbVictoire + update.nbDefaite);
-        }
-        //GAGNE => AUGMENTATION DE LA PROBABILITE
-        else {
-            newP = (update.probabilite * update.poids + update.nbVictoire) / (update.poids + update.nbVictoire + update.nbDefaite);    
-        }
-        update.probabilite = newP;
+        referencesArmes.get(index).probabilite = (referencesArmes.get(index).probabilite * referencesArmes.get(index).poids + referencesArmes.get(index).nbVictoire) / (referencesArmes.get(index).poids + referencesArmes.get(index).nbVictoire + referencesArmes.get(index).nbDefaite);
     }
     
-    public static void main(String args[]) {
-        initProbaWeapon();
-        //
-        //CODE A TESTER
-        //
-        //updateProba(UT2004ItemType.ASSAULT_RIFLE, 1);
-        Collections.sort(listeArmes);
-        Collections.reverse(listeArmes);
-        /*Iterator<ProbaArmes> it = listeArmes.iterator();
-        while (it.hasNext()) {
-            System.out.println(it.next().nom.getGroup().getName());
-        }*/
-        
-    }
 }
