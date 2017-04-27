@@ -7,6 +7,7 @@ import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Game;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Items;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.NavPoints;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.WeaponPrefs;
+import cz.cuni.amis.pogamut.ut2004.agent.navigation.IUT2004Navigation;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.pathfollowing.NavMeshNavigation;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Player;
@@ -73,8 +74,6 @@ public class Pursue {
         this.runningToPlayer = mainBot.isRunningToPlayer();
         
     }
-        
-    
     
         protected void statePursue() {
         //log.info("Decision is: PURSUE");
@@ -82,13 +81,12 @@ public class Pursue {
         if (mainBot.getPursueCount() > 10) {//30 au depart
             mainBot.reset();
         }
-        if (enemy != null) {
+        if (enemy != null && info.getLocation().getDistance(enemy.getLocation()) >= 700) {
         	bot.getBotName().setInfo("PURSUE");
                 navBot.navigate(enemy);
         	navBot.setItem(null);
         } else {
-        	mainBot.reset();
+        	navBot.navigate(mainBot.getNavigation().getLastTargetPlayer().getLocation());
         }
-    } 
-    
+    }   
 }

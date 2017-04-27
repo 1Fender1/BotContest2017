@@ -1,6 +1,7 @@
 package com.mycompany.utbotcontest;
 
 import cz.cuni.amis.pogamut.base.utils.logging.LogCategory;
+import cz.cuni.amis.pogamut.base3d.worldview.object.Location;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weaponry;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.AgentInfo;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Game;
@@ -81,15 +82,35 @@ public class Hit {
         
         protected void stateHit() {
         //log.info("Decision is: HIT");
-        bot.getBotName().setInfo("HIT");
-        if (move.isRunning()) {
-            move.moveContinuos();
-            move.jump(0.4);
-            move.stopMovement();
-            navBot.setItem(null);
+            bot.getBotName().setInfo("HIT");
+            enemy = info.getNearestVisiblePlayer();
+            if (enemy != null) {
+                move.turnTo(enemy);
+                if (enemy.getFiring() != 0) {
+                    if (mainBot.sensorLeft90) {
+                        move.strafeRight(70);
+                        if (info.getLocation().getDistance(enemy.getLocation()) <= 500) {
+                            move.dodge(new Location(0,-1,0), true);
+                        }
+                    }
+                    if (mainBot.sensorRight90) {
+                        move.strafeLeft(70);
+                        if (info.getLocation().getDistance(enemy.getLocation()) <= 500) {
+                            move.dodge(new Location(0,1,0), true);
+                        }
+                    }
+                    if (mainBot.sensorLeft90 && mainBot.sensorRight90) {
+                        move.turnHorizontal(90);
+                        move.strafeLeft(70);
+                        move.doubleJump();
+                    }
+                }
+            }
+            else {
+                mainBot.getAct().act(new Rotate().setAmount(32000));
+                navBot.setItem(null);
+            }                          
         }
-        mainBot.getAct().act(new Rotate().setAmount(32000));
-    }
     
     
 }
