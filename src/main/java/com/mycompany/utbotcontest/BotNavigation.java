@@ -5,6 +5,7 @@ import cz.cuni.amis.pogamut.base3d.worldview.object.Location;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.AgentInfo;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.NavPoints;
 import cz.cuni.amis.pogamut.ut2004.agent.module.utils.TabooSet;
+import cz.cuni.amis.pogamut.ut2004.agent.navigation.IUT2004Navigation;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.LevelGeometry;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.LevelGeometryModule;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.drawing.UT2004Draw;
@@ -60,10 +61,14 @@ public class BotNavigation {
     private NavPoints navPoints;
     
     private MeshInit meshInit;
+    
+    private IUT2004Navigation navigation;
         
     public BotNavigation(Bot mainBot, MeshInit meshInit)
     {
         this.mainBot = mainBot;
+        
+        navigation = mainBot.getNavigation();
         
         bot = mainBot.getBot();
         tabooItems = new TabooSet<Item>(bot);
@@ -191,28 +196,27 @@ public class BotNavigation {
     
     public boolean navigate() {
     	//body.getCommunication().sendGlobalTextMessage("SPEED: " + info.getVelocity().size());
-        
     	/*if (stuckDetector.isStuck())
         {
             stuckDetector.reset();
             System.out.println("---------J'essaie d'atteindre ce foutu point ! --------------");
             return false;
         }*/
-
-        
-    	if (nmNav.isNavigating()) 
-            return false;
-    	
-    	if (raycasting) {
+    	/*if (nmNav.isNavigating()) 
+            return false;*/
+    	/*if (raycasting) {
             raycast();
-    	}
-    	
+    	}*/
+        /*if (!reachable(np))
+            return false;
+        nmNav.navigate(np);*/
+        
+        if (navigation.isNavigating())
+            return false;
+        
     	NavPoint np = navPoints.getRandomNavPoint();
         
-        if (!reachable(np))
-            return false;
-        
-        nmNav.navigate(np);
+        navigation.navigate(np);
     	
     	return false;
     }
@@ -226,20 +230,17 @@ public class BotNavigation {
             System.out.println("---------J'essaie d'atteindre ce foutu point ! --------------");
             return false;
         }*/
-        
-    	if (nmNav.isNavigating()) return false;
-    	
-    	if (raycasting) {
+    	//if (nmNav.isNavigating()) return false;
+    	/*if (raycasting) {
     		raycast();
-    	}
-    	
+    	}*/
+    	/*if (!reachable(item))
+            return false;*/
+    	//nmNav.navigate(item);
         
-        
-    	if (!reachable(item))
-            return false;
-    	
-        nmNav.navigate(item);
-        
+        if (navigation.isNavigating()) return false;
+        navigation.navigate(item);
+               
     	return false;
     }
     
@@ -252,17 +253,17 @@ public class BotNavigation {
             System.out.println("---------J'essaie d'atteindre ce foutu point ! --------------");
             return false;
         }*/
-        
-    	if (nmNav.isNavigating()) return false;
-    	
-    	if (raycasting) {
+    	//if (nmNav.isNavigating()) return false;
+    	/*if (raycasting) {
     		raycast();
     	}
-        
     	if (!reachable(item))
-            return false;
-    	
-        nmNav.navigate(item);
+            return false;*/
+    	//nmNav.navigate(item);
+        
+         if (navigation.isNavigating()) return false;
+         
+        navigation.navigate(item);
         
     	return false;
     }
@@ -276,17 +277,18 @@ public class BotNavigation {
         System.out.println("---------J'essaie d'atteindre ce foutu point ! --------------");
         return false;
     }*/
-
-    if (nmNav.isNavigating()) return false;
-
-    if (raycasting) {
+    //if (nmNav.isNavigating()) return false;
+       /*if (raycasting) {
         raycast();
-    }
+    }*/
+    /*if (!reachable(item))
+        return false;*/
 
-    if (!reachable(item))
-        return false;
+    //nmNav.navigate(item);
 
-    nmNav.navigate(item);
+    if (navigation.isNavigating()) return false;
+    
+    navigation.navigate(item);
 
     return false;
 }

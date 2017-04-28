@@ -75,17 +75,25 @@ public class Pursue {
     }
     
         protected void statePursue() {
-        //log.info("Decision is: PURSUE");
-        mainBot.setPursueCount(mainBot.getPursueCount() + 1);
-        if (mainBot.getPursueCount() > 10) {//30 au depart
-            mainBot.reset();
-        }
-        if (enemy != null && info.getLocation().getDistance(enemy.getLocation()) >= 700) {
-        	bot.getBotName().setInfo("PURSUE");
+            //log.info("Decision is: PURSUE");
+            bot.getBotName().setInfo("PURSUE");
+            mainBot.setPursueCount(mainBot.getPursueCount() + 1);
+            if (mainBot.getPursueCount() > 30) {
+                mainBot.reset();
+            }
+            if (enemy != null) {
+                
                 navBot.navigate(enemy);
-        	navBot.setItem(null);
-        } else {
-        	navBot.navigate(mainBot.getNavigation().getLastTargetPlayer().getLocation());
-        }
+                navBot.setItem(null);
+            } else {
+                //mainBot.reset();
+            }
+            /*if (enemy != null && info.getLocation().getDistance(enemy.getLocation()) >= 700) {
+                    bot.getBotName().setInfo("PURSUE");
+                    navBot.navigate(enemy);
+                    navBot.setItem(null);
+            } else {
+                    navBot.navigate(mainBot.getNavigation().getLastTargetPlayer().getLocation());
+            }*/
     }   
 }

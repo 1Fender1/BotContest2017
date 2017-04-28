@@ -78,7 +78,8 @@ public class Engage {
     public void stateEngage() {
         //log.info("Decision is: ENGAGE");
         //config.setName("Hunter [ENGAGE]");
-
+        bot.getBotName().setInfo("ENGAGE");
+        
         Random random = new Random();
         
         boolean shooting = false;
@@ -90,6 +91,7 @@ public class Engage {
         if (enemy == null || !enemy.isVisible()) {
             // pick new enemy
             enemy = mainBot.getPlayers().getNearestVisiblePlayer(mainBot.getPlayers().getVisibleEnemies().values());
+            mainBot.setEnemy(enemy);
             if (enemy == null) {
                 log.info("Can't see any enemies... ???");
                 return;
@@ -121,8 +123,8 @@ public class Engage {
             }
         } else {
             runningToPlayer = false;
-            //move.stopMovement();
-            nmNav.stopNavigation();
+            mainBot.getMove().stopMovement();
+            //nmNav.stopNavigation();
         }
         
         navBot.setItem(null);

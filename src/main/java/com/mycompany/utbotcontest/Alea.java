@@ -64,19 +64,41 @@ public class Alea {
     
      public void testIndiceAlea()
     {
-        double tabVal[] ={0.35,0.15,0.24,0.26};
+        double tabVal[] = {0.35,0.15,0.24,0.26};
         
-        int[] tabRes =new int[4];
+        /*int[] tabRes = new int[4];
         for (int i = 0 ; i < 100000; i++)
         {
             tabRes[indiceAlea(tabVal)]++;
         }
-        System.out.println("Res obtenu/Res Attendu : " + tabRes[0] + "/35000 ;" + tabRes[1] + "/15000 ; "+ tabRes[2] + "/24000 ; " + tabRes[3] + "/26000");
+        System.out.println("Res obtenu/Res Attendu : " + tabRes[0] + "/35000 ;" + tabRes[1] + "/15000 ; "+ tabRes[2] + "/24000 ; " + tabRes[3] + "/26000");*/
+        int nbIndice0 = 0, nbIndice1 = 0, nbIndice2 = 0, nbIndice3 = 0, temp, nbVal;
+        for (int i = 0; i < 1000000; i++)
+        {
+            temp = indiceAlea(tabVal);
+            switch (temp)
+            {
+                case 0: nbIndice0++;
+                    break;
+                case 1: nbIndice1++;
+                    break;
+                case 2: nbIndice2++;
+                    break;
+                case 3: nbIndice3++;
+                    break;
+                default: break;
+            }       
+        }
+        nbVal = nbIndice0 + nbIndice1 + nbIndice2 + nbIndice3;
+        System.out.println("Valeurs experimentales");
+        System.out.println("prob0 " + (float)nbIndice0/nbVal + " prob1 " + (float)nbIndice1/nbVal + " prob2 " + (float)nbIndice2/nbVal + " prob 3 " + (float)nbIndice3/nbVal);
+        System.out.println("Valeurs théoriques");
+        System.out.println("prob 0 0.35 prob1 0.15 prob2 0.24 prob3 0.26");
     }
     
     public static void main (String[] args)
     {
         Alea r = new Alea();
-        r.testPourcentDeChance();
+        r.testIndiceAlea();
     }
 }

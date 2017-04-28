@@ -3,9 +3,6 @@ package com.mycompany.utbotcontest;
 import cz.cuni.amis.introspection.java.JProp;
 import cz.cuni.amis.pogamut.base.communication.worldview.listener.annotation.EventListener;
 import cz.cuni.amis.pogamut.base.communication.worldview.listener.annotation.ObjectClassEventListener;
-import cz.cuni.amis.pogamut.base.communication.worldview.object.IWorldObject;
-import cz.cuni.amis.pogamut.base.communication.worldview.object.IWorldObjectEvent;
-import cz.cuni.amis.pogamut.base.communication.worldview.object.event.WorldObjectUpdatedEvent;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.NavigationState;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.UT2004PathAutoFixer;
 import cz.cuni.amis.utils.flag.FlagListener;
@@ -21,7 +18,6 @@ import cz.cuni.amis.pogamut.base.utils.guice.AgentScoped;
 import cz.cuni.amis.pogamut.base.utils.logging.LogCategory;
 import cz.cuni.amis.pogamut.base3d.worldview.object.Location;
 import cz.cuni.amis.pogamut.base3d.worldview.object.event.WorldObjectAppearedEvent;
-import cz.cuni.amis.pogamut.base3d.worldview.object.event.WorldObjectDisappearedEvent;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weapon;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weaponry;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.AgentInfo;
@@ -37,7 +33,6 @@ import cz.cuni.amis.pogamut.ut2004.bot.command.AdvancedLocomotion;
 import cz.cuni.amis.pogamut.ut2004.bot.command.CompleteBotCommandsWrapper;
 import cz.cuni.amis.pogamut.ut2004.bot.command.ImprovedShooting;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004BotModuleController;
-import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.ChangeWeapon;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Configuration;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Initialize;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.RemoveRay;
@@ -49,8 +44,6 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.InitedM
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Self;
 import cz.cuni.amis.pogamut.ut2004.utils.UnrealUtils;
 import cz.cuni.amis.utils.exception.PogamutException;
-import java.util.Iterator;
-import java.util.Map;
 import javax.vecmath.Vector3d;
 
 
@@ -151,26 +144,6 @@ public class Bot extends UT2004BotModuleController {
 
         autoFixer = new UT2004PathAutoFixer(bot, navigation.getPathExecutor(), fwMap, aStar, navBuilder); // auto-removes wrong navigation links between navpoints
 
-        // listeners        
-        navigation.getState().addListener(new FlagListener<NavigationState>() {
-            @Override
-            public void flagChanged(NavigationState changedValue) {
-                switch (changedValue) {
-                    case PATH_COMPUTATION_FAILED:
-                    case STUCK:
-                        if (navBot.getItem() != null) {
-                            navBot.getTabooItems().add(navBot.getItem(), 10);
-                        }
-                        reset();
-                        break;
-
-                    case TARGET_REACHED:
-                        reset();
-                        break;
-                }
-            }
-        });
-
         // DEFINE WEAPON PREFERENCES
         weaponPrefs.addGeneralPref(UT2004ItemType.ROCKET_LAUNCHER, true);
         weaponPrefs.addGeneralPref(UT2004ItemType.FLAK_CANNON, true);
@@ -194,9 +167,9 @@ public class Bot extends UT2004BotModuleController {
         @Override
     public void botFirstSpawn(GameInfo gameInfo, ConfigChange config, InitedMessage init, Self self) {
 
-        meshInit = new MeshInit(this, navBot, navMeshModule, levelGeometryModule);
+        //meshInit = new MeshInit(this, navBot, navMeshModule, levelGeometryModule);
 
-        meshInit.initSpawn(gameInfo);
+        //meshInit.initSpawn(gameInfo);
         navBot = new BotNavigation(this, meshInit);
         stateRunAround = new RunAroundItem(this, navBot);
         engage = new Engage(this, navBot);
@@ -207,46 +180,31 @@ public class Bot extends UT2004BotModuleController {
         probaA.initProbabilitesA();
         final int rayLength = (int) (UnrealUtils.CHARACTER_COLLISION_RADIUS * 5);
         // settings for the rays
-        boolean fastTrace = true;        // perform only fast trace == we just need true/false information
-        boolean floorCorrection = false; // provide floor-angle correction for the ray (when the bot is running on the skewed floor, the ray gets rotated to match the skew)
-        boolean traceActor = false;      // whether the ray should collid with other actors == bots/players as well
-        
-        // 1. remove all previous rays, each bot starts by default with three
-        // rays, for educational purposes we will set them manually
+        boolean fastTrace = true;
+        boolean floorCorrection = false; 
+        boolean traceActor = false;
+
         getAct().act(new RemoveRay("All"));
 
-        // 2. create new rays
-        //raycasting.createRay(LEFT45,  new Vector3d(1, -1, 0), rayLength, fastTrace, floorCorrection, traceActor);
         raycasting.createRay(FRONT,   new Vector3d(1, 0, 0), rayLength, fastTrace, floorCorrection, traceActor);
-        //raycasting.createRay(RIGHT45, new Vector3d(1, 1, 0), rayLength, fastTrace, floorCorrection, traceActor);
-        // note that we will use only three of them, so feel free to experiment with LEFT90 and RIGHT90 for yourself
+
         raycasting.createRay(LEFT90,  new Vector3d(0, -1, 0), rayLength, fastTrace, floorCorrection, traceActor);
         raycasting.createRay(RIGHT90, new Vector3d(0, 1, 0), rayLength, fastTrace, floorCorrection, traceActor);
 
-        // register listener called when all rays are set up in the UT engine
+
         raycasting.getAllRaysInitialized().addListener(new FlagListener<Boolean>() {
+            @Override
             public void flagChanged(Boolean changedValue) {
-                // once all rays were initialized store the AutoTraceRay objects
-                // that will come in response in local variables, it is just
-                // for convenience
+
                 left = raycasting.getRay(LEFT90);
                 front = raycasting.getRay(FRONT);
                 right = raycasting.getRay(RIGHT90);
             }
         });
-        // have you noticed the FlagListener interface? The Pogamut is often using {@link Flag} objects that
-        // wraps some iteresting values that user might respond to, i.e., whenever the flag value is changed,
-        // all its listeners are informed
-
-        // 3. declare that we are not going to setup any other rays, so the 'raycasting' object may know what "all" is        
+       
         raycasting.endRayInitSequence();
-        // IMPORTANT:
-        // The most important thing is this line that ENABLES AUTO TRACE functionality,
-        // without ".setAutoTrace(true)" the AddRay command would be useless as the bot won't get
-        // trace-lines feature activated
+
         getAct().act(new Configuration().setDrawTraceLines(true).setAutoTrace(true));
-        // FINAL NOTE: the ray initialization must be done inside botInitialized method or later on inside
-        //             botSpawned method or anytime during doLogic method
     }
     
     /*@ObjectClassEventListener(eventClass = WorldObjectUpdatedEvent.class, objectClass = Weaponry.class)
@@ -314,7 +272,7 @@ public class Bot extends UT2004BotModuleController {
     
     @Override
     public void logic() throws PogamutException {
-        if (!navMeshModule.isInitialized()) {
+        /*if (!navMeshModule.isInitialized()) {
             // Check logs for information, where the bot expects NavMesh file to be present...
             meshInit.setErrorMsg(meshInit.getErrorMsg() + 1);
             meshInit.say("NAV MESH NOT INITIALIZED - SEE STARTUP LOGS FOR MORE INFO... (" + (meshInit.getErrorMsg() + ")"));
@@ -333,10 +291,8 @@ public class Bot extends UT2004BotModuleController {
     		if (!meshInit.speak()) return;
     	} else {
     		navigate = true;
-    	}
-        if (info.isAdrenalineFull()) {
-            comboAdrenaline();
-        }
+    	}*/
+
         if (!weaponry.getCurrentWeapon().getGroup().getName().equals(lastWeaponUsed)) {
             lastWeaponUsed = weaponry.getCurrentWeapon().getGroup().getName();
         }
@@ -360,6 +316,7 @@ public class Bot extends UT2004BotModuleController {
             return;
         }
 
+        System.out.println("==========enemy " + enemy + " ===================");
         // 4) have you got enemy to pursue? -> go to the last position of enemy
         if (enemy != null && shouldPursue && weaponry.hasLoadedWeapon()) {  // !enemy.isVisible() because of 2)
             pursue.statePursue();
@@ -378,19 +335,6 @@ public class Bot extends UT2004BotModuleController {
 
     }
     
-    protected void comboAdrenaline() {
-        if (info.getHealth() <= healthLevel) {
-            combo.performDefensive();
-        }
-        else {
-            if (shouldEngage || shouldPursue) {
-                combo.performBerserk();
-            }
-            else {
-                combo.performInvisible();
-            }
-        }
-    }
     
     
     @Override
@@ -496,6 +440,10 @@ public class Bot extends UT2004BotModuleController {
 
     public void setNavigate(boolean navigate) {
         this.navigate = navigate;
+    }
+
+    public void setEnemy(Player enemy) {
+        this.enemy = enemy;
     }
     
     

@@ -2,6 +2,7 @@ package com.mycompany.utbotcontest;
 
 import static com.mycompany.utbotcontest.ProbabilitesArmes.referencesArmes;
 import cz.cuni.amis.pogamut.base.utils.logging.LogCategory;
+import cz.cuni.amis.pogamut.base.utils.math.DistanceUtils;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weaponry;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.AgentInfo;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Game;
@@ -46,6 +47,8 @@ public class RunAroundItem {
     
     private ProbabilitesArmes probaA;
     
+    private final double radius = 500;
+    
     public RunAroundItem(Bot mainBot, BotNavigation navBot)
     {
         this.mainBot = mainBot;
@@ -81,7 +84,6 @@ public class RunAroundItem {
       protected List<Item> listArmor = new ArrayList<Item>();
       protected List<Item> listHealth = new ArrayList<Item>();
       protected List<Item> listAmmo = new ArrayList<Item>();
-      protected List<Item> listAdrenaline = new ArrayList<Item>();
       protected Item damage = null;
       protected double min;
       
@@ -96,35 +98,34 @@ public class RunAroundItem {
         int d = 0;
         
         for(Item elem : listI){
-          for(ItemType itemType : ItemType.Category.WEAPON.getTypes()){
-            if(elem.getType() == itemType){
-               listWeapon.add(elem);
-               w++;
-           }}
-          for(ItemType itemType : ItemType.Category.HEALTH.getTypes()){
-           if(elem.getType() == itemType){
-               listHealth.add(elem);
-               h++;
-           }}
-          for(ItemType itemType : ItemType.Category.ARMOR.getTypes()){
-           if(elem.getType() == itemType){
-               listArmor.add(elem);
-               a++;
-           }}
-          for(ItemType itemType : ItemType.Category.AMMO.getTypes()){
-           if(elem.getType() == itemType){
-               listAmmo.add(elem);
-               am++;
-           }}
-          for(ItemType itemType : ItemType.Category.ADRENALINE.getTypes()){
-           if(elem.getType() == itemType){
-               listAdrenaline.add(elem);
-               ad++;
-           }}
-          if (elem.getType() == UT2004ItemType.U_DAMAGE_PACK){
+            for(ItemType itemType : ItemType.Category.WEAPON.getTypes()){
+                if(elem.getType() == itemType){
+                   listWeapon.add(elem);
+                   w++;
+                }
+            }
+            for(ItemType itemType : ItemType.Category.HEALTH.getTypes()){
+                if(elem.getType() == itemType){
+                   listHealth.add(elem);
+                   h++;
+                }
+            }
+            for(ItemType itemType : ItemType.Category.ARMOR.getTypes()){
+                if(elem.getType() == itemType){
+                   listArmor.add(elem);
+                   a++;
+                }
+            }
+            for(ItemType itemType : ItemType.Category.AMMO.getTypes()){
+                if(elem.getType() == itemType){
+                   listAmmo.add(elem);
+                   am++;
+                }
+            }
+            if (elem.getType() == UT2004ItemType.U_DAMAGE_PACK){
               damage = elem;
               d++;
-          }
+            }
         }
         System.out.println("Armes:   "+w);
         System.out.println("Vie:   "+h);
@@ -219,8 +220,8 @@ public class RunAroundItem {
               }
           return itAdrenaline;
       }
-    
-    protected Item getNextItem (List<Item> listH,List<Item> listW,List<Item> listA,List<Item> listAm,List<Item> listAd){
+      
+    protected Item getNextItem (List<Item> listH,List<Item> listW,List<Item> listA,List<Item> listAm){
        Item item = null;
         if(weaponry.getWeapons().size() == 2 && !listW.isEmpty())
             return selectItemInListWeapon(listW);
@@ -230,8 +231,6 @@ public class RunAroundItem {
             return selectItemInListArmor(listA);
         else if(!listAm.isEmpty())
             return selectItemInListAmmo(listAm);
-        else if(!listAd.isEmpty() && info.getAdrenaline() < 20)
-            return selectItemInListAdrenaline(listAd);
         else if(damage != null && navBot.reachable(damage))
             return damage;
         else if(!listW.isEmpty()){
@@ -245,6 +244,26 @@ public class RunAroundItem {
             return item;}
         else return null;
     }
+    
+    
+    private Item existNearInterstingItem(List<Item> intersting)
+    {
+        List<Item> listItem = new ArrayList<Item>();
+        
+        for (Item item : intersting)
+        {
+            if (item.getLocation().getDistance(info.getLocation()) <= radius)
+            {
+                listItem.add(item);
+            }
+        }
+        addItemsInList(listItem);
+        Item itemProche = getNextItem (listHealth,listWeapon,listArmor,listAmmo);
+        listHealth.clear(); listWeapon.clear(); listArmor.clear(); listAmmo.clear();
+        
+        return itemProche;        
+    }
+    
 
     ////////////////////////////
     // STATE RUN AROUND ITEMS //
@@ -254,6 +273,8 @@ protected List<Item> itemsToRunAround = null;
     protected void stateRunAroundItems() {
         //log.info("Decision is: ITEMS");
         //config.setName("Hunter [ITEMS]");
+        bot.getBotName().setInfo("RUN AROUND ITEM");
+
         if (nmNav.isNavigatingToItem()) return;
         
         List<Item> interesting = new ArrayList<Item>();
@@ -263,8 +284,6 @@ protected List<Item> itemsToRunAround = null;
         	if (!weaponry.hasLoadedWeapon(itemType)) 
                     interesting.addAll(items.getSpawnedItems(itemType).values());
         }
-
-        
         
         // ADD ARMORS
         for (ItemType itemType : ItemType.Category.ARMOR.getTypes()) {
@@ -299,18 +318,20 @@ protected List<Item> itemsToRunAround = null;
                 interesting.addAll(items.getSpawnedItems(itemType).values());
         }
         
-        //ADD Adrénaline
-        if (info.getAdrenaline() < game.getMaxAdrenaline())
-        {
-            interesting.addAll(items.getSpawnedItems(UT2004ItemType.ADRENALINE_PACK).values());
-        }
-        
-        
        // Item item = MyCollections.getRandom(tabooItems.filter(interesting));
-        addItemsInList(interesting);
-        Item item = getNextItem (listHealth,listWeapon,listArmor,listAmmo,listAdrenaline);
-        listHealth.clear(); listWeapon.clear(); listArmor.clear(); listAmmo.clear(); listAdrenaline.clear();
-        min = 0; damage = null;
+       Item item;
+       item = existNearInterstingItem(interesting);
+       if (item == null)
+       {
+            addItemsInList(interesting);
+            item = getNextItem (listHealth,listWeapon,listArmor,listAmmo);
+            listHealth.clear(); listWeapon.clear(); listArmor.clear(); listAmmo.clear();
+       }
+       else
+       {
+           System.out.println("Je vais chercher l'item le plus proche !");
+       }
+       min = 0; damage = null;
         
         if (item == null) {
         	log.warning("NO ITEM TO RUN FOR!");
