@@ -195,22 +195,16 @@ public class Bot extends UT2004BotModuleController {
         raycasting.getAllRaysInitialized().addListener(new FlagListener<Boolean>() {
             @Override
             public void flagChanged(Boolean changedValue) {
-
                 left = raycasting.getRay(LEFT90);
                 front = raycasting.getRay(FRONT);
                 right = raycasting.getRay(RIGHT90);
             }
         });
-       
         raycasting.endRayInitSequence();
-
         getAct().act(new Configuration().setDrawTraceLines(true).setAutoTrace(true));
+
     }
     
-    /*@ObjectClassEventListener(eventClass = WorldObjectUpdatedEvent.class, objectClass = Weaponry.class)
-    protected void weaponChangeUpdated(WorldObjectUpdatedEvent<Weaponry> event) {
-		// greet player when he appears
-    }*/
     
      //{@link PlayerKilled} listener that provides "frag" counting + is switches the state of the hunter.
     //@param event
@@ -247,27 +241,7 @@ public class Bot extends UT2004BotModuleController {
     	log.info("I have just been hurt by other bot for: " + event.getDamageType() + "[" + event.getDamage() + "]");
     }
     
-    @ObjectClassEventListener(eventClass = WorldObjectAppearedEvent.class, objectClass = IncomingProjectile.class)
-	protected void incomingProjectile(WorldObjectAppearedEvent<IncomingProjectile> event) {
-            Location origine = event.getObject().getOrigin();
-            Vector3d d = event.getObject().getDirection();
-            d.negate();
-            if (info.getLocation().asVector3d().equals(d)) {
-                if (sensorLeft90 && sensorRight90) {
-                    move.doubleJump();
-                }
-                if (sensorLeft90) {
-                    move.strafeRight(60);
-                    move.jump();
-                }
-                if (sensorRight90) {
-                    move.strafeRight(60);
-                    move.jump();
-                }
-            }
-        }
-    
-    
+
     protected Weapon wp = null;
     
     @Override
@@ -292,7 +266,13 @@ public class Bot extends UT2004BotModuleController {
     	} else {
     		navigate = true;
     	}*/
-
+         if (!raycasting.getAllRaysInitialized().getFlag()) {
+            return;
+        }
+        sensorFront = front.isResult();
+        sensorLeft90 = left.isResult();
+        sensorRight90 = right.isResult();
+        sensor = sensorFront || sensorLeft90 || sensorRight90;
         if (!weaponry.getCurrentWeapon().getGroup().getName().equals(lastWeaponUsed)) {
             lastWeaponUsed = weaponry.getCurrentWeapon().getGroup().getName();
         }
@@ -316,13 +296,13 @@ public class Bot extends UT2004BotModuleController {
             return;
         }
 
-        System.out.println("==========enemy " + enemy + " ===================");
+        //System.out.println("==========enemy " + enemy + " ===================");
         // 4) have you got enemy to pursue? -> go to the last position of enemy
         if (enemy != null && shouldPursue && weaponry.hasLoadedWeapon()) {  // !enemy.isVisible() because of 2)
             pursue.statePursue();
             return;
         }
-
+        
         // 5) are you hurt?			-> get yourself some medKit
         if (shouldCollectHealth && info.getHealth() < healthLevel) {
                 medkit.stateMedKit();
@@ -331,7 +311,7 @@ public class Bot extends UT2004BotModuleController {
         }
 
         // 6) if nothing ... run around items
-        stateRunAround.stateRunAroundItems();
+        //stateRunAround.stateRunAroundItems();
 
     }
     
@@ -434,6 +414,14 @@ public class Bot extends UT2004BotModuleController {
         return probaA;
     }
 
+    public Engage getEngage() {
+        return engage;
+    }
+    
+    public Pursue getPursue() {
+        return pursue;
+    }
+    
     public boolean isNavigate() {
         return navigate;
     }
@@ -446,6 +434,12 @@ public class Bot extends UT2004BotModuleController {
         this.enemy = enemy;
     }
     
+    public boolean getLeft90() {
+        return left.isResult();
+    }
     
+    public boolean getRight90() {
+        return right.isResult();
+    }
     
 }

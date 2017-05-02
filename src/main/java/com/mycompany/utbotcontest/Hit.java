@@ -1,6 +1,9 @@
 package com.mycompany.utbotcontest;
 
+import cz.cuni.amis.pogamut.base.communication.worldview.listener.annotation.ObjectClassEventListener;
 import cz.cuni.amis.pogamut.base.utils.logging.LogCategory;
+import cz.cuni.amis.pogamut.base3d.worldview.object.event.WorldObjectAppearedEvent;
+import cz.cuni.amis.pogamut.unreal.communication.messages.UnrealId;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weaponry;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.AgentInfo;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Game;
@@ -10,7 +13,9 @@ import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.WeaponPrefs;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.pathfollowing.NavMeshNavigation;
 import cz.cuni.amis.pogamut.ut2004.bot.command.AdvancedLocomotion;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Rotate;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Player;
+import java.util.Random;
 
 /**
  *
@@ -46,6 +51,8 @@ public class Hit {
     
     private AdvancedLocomotion move;
     
+    private boolean turn;
+    
 
     public Hit(Bot mainBot, BotNavigation navBot)
     {
@@ -76,16 +83,44 @@ public class Hit {
         this.runningToPlayer = mainBot.isRunningToPlayer();
         
         this.move = mainBot.getMove();
+        
+        this.turn = true;
     }
         
         protected void stateHit() {
-        //log.info("Decision is: HIT");
-        bot.getBotName().setInfo("HIT");
-
-            move.jump();
-            move.turnHorizontal(360);
-            
+            //log.info("Decision is: HIT");
+            bot.getBotName().setInfo("HIT");
+                move.stopMovement();
+                mainBot.getAct().act(new Rotate().setAmount(32000));
+                if (mainBot.getPlayers().canSeeEnemies()) {
+                    this.enemy = mainBot.getPlayers().getNearestVisibleEnemy();
+                    mainBot.setEnemy(enemy);
+                    move.turnTo(enemy);
+                    if (enemy.getFiring() == 0 && info.isFacing(enemy.getLocation(), 180)) {
+                        if (mainBot.getRight90()) {
+                            move.strafeLeft(200, enemy.getId());
+                            //move.jump();
+                        }
+                        if (mainBot.getLeft90()) {
+                            move.strafeRight(200, enemy.getId());
+                            //move.jump();
+                        }
+                        if (!mainBot.getLeft90() && !mainBot.getRight90()) {
+                            Random randVal = new Random();
+                            int nbVal = randVal.nextInt();
+                            if (nbVal % 2 == 0) {
+                                move.strafeLeft(200, enemy.getId());
+                                //move.jump();
+                            }
+                            else {
+                                move.strafeRight(200, enemy.getId());
+                                //move.jump();
+                            }
+                        }
+                    }
+                }
+                else {
+                    return; 
+                }
         }
-    
-    
 }

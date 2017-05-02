@@ -40,5 +40,12 @@
 			</plugin>
 		</plugins>
 	</build>
-
+    <dependencies>
+        <dependency>
+            <groupId>cz.cuni.amis</groupId>
+            <artifactId>amis-utils</artifactId>
+            <version>3.7.0</version>
+            <type>jar</type>
+        </dependency>
+    </dependencies>
 </project>

@@ -1,6 +1,8 @@
 package com.mycompany.utbotcontest;
 
+import cz.cuni.amis.pogamut.base.communication.worldview.listener.annotation.ObjectClassEventListener;
 import cz.cuni.amis.pogamut.base.utils.logging.LogCategory;
+import cz.cuni.amis.pogamut.base3d.worldview.object.event.WorldObjectAppearedEvent;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weaponry;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.AgentInfo;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Game;
@@ -73,7 +75,7 @@ public class Pursue {
         this.runningToPlayer = mainBot.isRunningToPlayer();
         
     }
-    
+       
         protected void statePursue() {
             //log.info("Decision is: PURSUE");
             bot.getBotName().setInfo("PURSUE");
@@ -82,18 +84,15 @@ public class Pursue {
                 mainBot.reset();
             }
             if (enemy != null) {
-                
-                navBot.navigate(enemy);
-                navBot.setItem(null);
-            } else {
-                //mainBot.reset();
-            }
-            /*if (enemy != null && info.getLocation().getDistance(enemy.getLocation()) >= 700) {
-                    bot.getBotName().setInfo("PURSUE");
+                if (bot.getLocation().getDistance(enemy.getLocation()) >= 600) {
                     navBot.navigate(enemy);
                     navBot.setItem(null);
+                }
+                else {
+                    mainBot.getEngage().stateEngage();
+                }
             } else {
-                    navBot.navigate(mainBot.getNavigation().getLastTargetPlayer().getLocation());
-            }*/
-    }   
+                navBot.navigate(mainBot.getNavigation().getLastTargetPlayer());
+            }
+    } 
 }
