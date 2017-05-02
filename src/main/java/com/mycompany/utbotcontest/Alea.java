@@ -36,9 +36,15 @@ public class Alea {
     }
     
     public int indiceAlea(double tabProba[]){//Genere aleatoirement un indice pour un tableau ou chaque case est une probabilité sur 1
-        double r=Math.random();
+        int i;
+        double r;
         double somme = 0.0;
-        int i =0;
+        for(i=0; i<tabProba.length; i++){
+            somme=tabProba[i]+somme;
+        }
+        r=Math.random()*somme;
+        i =0;
+        somme=0;
         while(r>=somme){
             somme=somme+tabProba[i];
             i++;
