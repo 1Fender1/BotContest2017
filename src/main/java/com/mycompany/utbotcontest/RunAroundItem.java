@@ -21,6 +21,7 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.GameInf
 import cz.cuni.amis.pogamut.ut2004.utils.UnrealUtils;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  *
@@ -98,6 +99,96 @@ public class RunAroundItem {
       protected Item damage = null;
       protected double min;
       
+      public int[] harmonisationProba()
+      {
+        
+        int[] tabProba = new int[nbTypeItems];
+
+        tabProba[0] = probaHealth();
+        tabProba[1] = probaWeapon();
+        tabProba[2] = probaArmor();
+        tabProba[3] = probaAmmo();
+        tabProba[4] = probaUDamage();
+
+
+        int overValues = 0;
+        int temp = 1;
+        int repartition;
+
+        for (int i = 0; i < nbTypeItems; i++)
+        {
+            overValues += tabProba[i];
+        }
+        overValues -= 100;
+        repartition = Math.abs(overValues/nbTypeItems);
+
+        if (overValues > 0)
+        {
+            while (temp > 0 && repartition > 0)
+            {
+                temp = 0;
+                for (int i = 0; i < nbTypeItems; i++)
+                {
+                    if (tabProba[i] < repartition)
+                    {
+                        tabProba[i] = 0;
+                    }
+                    else
+                    {
+                        tabProba[i] -= repartition;
+                    }
+                    temp += tabProba[i];
+                }
+                temp -= 100;
+                repartition = Math.abs(temp/nbTypeItems);
+
+            }
+
+            if (temp > 0)
+            {   boolean ok = false;
+                while (!ok)
+                {
+                    Random r = new Random();
+                    int valTemp = r.nextInt(nbTypeItems);
+                    if (tabProba[valTemp]- temp >= 0)
+                    {
+                        tabProba[valTemp] -= temp;
+                        ok = true;
+                    }
+                }
+            }
+        }
+        else if (overValues < 0)
+        {
+            while (temp > 0 && repartition > 0)
+            {
+                temp = 0;
+                for (int i = 0; i < nbTypeItems; i++)
+                {
+                    if (tabProba[i] + repartition > 100)
+                    {
+                        tabProba[i] = 100;
+                    }
+                    else
+                    {
+                        tabProba[i] += repartition;
+                    }
+                    temp += tabProba[i];
+                }
+                temp -= 100;
+                repartition = Math.abs(temp/nbTypeItems);
+
+            }
+
+            if (temp > 0)
+            {
+                Random r = new Random();
+                tabProba[r.nextInt(nbTypeItems)] += temp;
+            }
+        }
+
+        return tabProba;
+      }
       
       //Ajout des items dans leur liste respective
       protected void addItemsInList(List<Item> listI){
@@ -153,6 +244,8 @@ public class RunAroundItem {
       //Si on a besoin de vie, alors on sélectionne l'item le plus proche dans la liste vie
       protected Item selectItemInListHealth(List<Item> listH){
           Item itHealth = null;
+          if (listH.isEmpty())
+              return null;
           if(info.getHealth() < 120){
                 min = info.getLocation().getDistance(listH.get(0).getLocation());
                 for(Item vie : listH){
@@ -172,6 +265,8 @@ public class RunAroundItem {
       //On sélectionne l'item correspondant à l'arme préférée du bot
       protected Item selectItemInListWeapon(List<Item> listW){
           Item itWeapon = null;
+          if (listW.isEmpty())
+              return null;
           //On va chercher l'arme ayant la proba la plus élevée
           min = referencesArmes.get(0).getProbabilite();
           for(ProbabilitesArmes pa : referencesArmes)
@@ -195,6 +290,8 @@ public class RunAroundItem {
       //Si on a besoin d'armure, alors on sélectionne l'item correspondant à l'armure la plus proche
       protected Item selectItemInListArmor(List<Item> listA){
           Item itArmor = null;
+          if (listA.isEmpty())
+              return null;
           if(info.getArmor() < 100){
             min = info.getLocation().getDistance(listA.get(0).getLocation());
             for(Item armor : listA){
@@ -215,6 +312,8 @@ public class RunAroundItem {
       //On sélectionne l'item correspondant aux munitions que le bot a besoin
       protected Item selectItemInListAmmo(List<Item> listAm){
           Item itAmmo = null;
+          if (listAm.isEmpty())
+              return null;
           min = info.getLocation().getDistance(listAmmo.get(0).getLocation());
           for(Item ammo : listAm){
               if(weaponry.hasLoadedWeapon(weaponry.getWeaponForAmmo(ammo.getType())) && weaponry.getAmmo(ammo.getType()) < weaponry.getMaxAmmo(ammo.getType())
@@ -225,16 +324,7 @@ public class RunAroundItem {
           }
           return itAmmo;
       }
-      
-      protected Item selectItemInListAdrenaline(List<Item> listAd){
-          Item itAdrenaline = null;
-              min = info.getLocation().getDistance(listAd.get(0).getLocation());
-              for(Item ad: listAd){
-                  if(info.getLocation().getDistance(ad.getLocation()) <= min)
-                    itAdrenaline = ad;
-              }
-          return itAdrenaline;
-      }
+
       
       //////////////////////////
       //PROBABIITE DE L'EVENT//
@@ -291,36 +381,43 @@ public class RunAroundItem {
       }
       
     protected Item getNextItem (List<Item> listH,List<Item> listW,List<Item> listA,List<Item> listAm){
-        int besoinH = probaHealth();
-        int besoinW = probaWeapon();
-        int besoinA = probaArmor();
-        int besoinAm = probaAmmo();
-        System.out.println("Besoin de vie:   "+besoinH);
-        System.out.println("Besoin d'arme:   "+besoinW);
-        System.out.println("Besoin d'armure:   "+besoinA);
-        System.out.println("Besoin de munitions:   "+besoinAm);
+       
+        Alea gen = new Alea();
+        
         Item item = null;
         
-        if(weaponry.getWeapons().size() == 2 && !listW.isEmpty())
-            return selectItemInListWeapon(listW);
-        else if(info.getHealth() <= 100 && !listH.isEmpty())
-            return selectItemInListHealth(listH);
-        else if(info.getArmor() <= 50 && !listA.isEmpty())
-            return selectItemInListArmor(listA);
-        else if(!listAm.isEmpty())
-            return selectItemInListAmmo(listAm);
-        else if(damage != null && navBot.reachable(damage))
-            return damage;
-        else if(!listW.isEmpty()){
-            min = info.getLocation().getDistance(listW.get(0).getLocation());
-            for(Item it : listW){
-                if(info.getLocation().getDistance(it.getLocation()) <= min){
-                    item = it;
-                    min = info.getLocation().getDistance(it.getLocation());
-                }
-            }
-            return item;}
-        else return null;
+        int[] probaRechercheItemTemp = harmonisationProba();
+        double[] probaRechercheItem = new double[nbTypeItems];
+        
+        for (int i = 0; i < nbTypeItems; i++)
+        {
+            probaRechercheItem[i] = (double)probaRechercheItemTemp[i]/100;
+        }
+        
+        int typeItem = gen.indiceAlea(probaRechercheItem);
+        
+        //0 Health
+        //1 Weapons
+        //2 Armors
+        //3 Ammos
+        //4 UDammage
+        System.out.println("+++++++TypeItem : "+ typeItem + "+++++++++++");
+        
+        switch (typeItem)
+        {
+            case 0 : item = selectItemInListHealth(listH); break;
+            case 1 : item = selectItemInListWeapon(listW); break;
+            case 2 : item = selectItemInListArmor(listA); break;
+            case 3 : item = selectItemInListAmmo(listAm); break;
+            case 4 : item = damage; break;
+            default : break;
+        }
+        
+        
+        if (probaAmmo() == 0 && probaArmor() == 0 && probaHealth() == 0 && probaUDamage() == 0 && probaWeapon() == 0)
+            return null;
+        
+        return item;
     }
     
     
@@ -353,7 +450,7 @@ protected List<Item> itemsToRunAround = null;
         //config.setName("Hunter [ITEMS]");
         bot.getBotName().setInfo("RUN AROUND ITEM");
 
-        if (nmNav.isNavigatingToItem()) return;
+        if (mainBot.getNavigation().isNavigatingToItem()) return;
         
         List<Item> interesting = new ArrayList<Item>();
         
@@ -403,6 +500,7 @@ protected List<Item> itemsToRunAround = null;
        {
             addItemsInList(interesting);
             item = getNextItem (listHealth,listWeapon,listArmor,listAmmo);
+            System.out.println("==========Item : " + item + "==============");
             listHealth.clear(); listWeapon.clear(); listArmor.clear(); listAmmo.clear();
        }
        else
@@ -417,7 +515,7 @@ protected List<Item> itemsToRunAround = null;
         
         if (item == null) {
         	log.warning("NO ITEM TO RUN FOR!");
-        	if (nmNav.isNavigating()) return;
+        	if (mainBot.getNavigation().isNavigatingToItem()) return;
         	bot.getBotName().setInfo("RANDOM NAV");
                 navBot.navigate();
         } else {

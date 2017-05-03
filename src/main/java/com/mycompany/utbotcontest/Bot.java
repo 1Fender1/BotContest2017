@@ -95,7 +95,7 @@ public class Bot extends UT2004BotModuleController {
     
     private Hit hit;
     
-    private MeshInit meshInit;
+    //private MeshInit meshInit;
     private ProbabilitesArmes probaA;
     
     private Player enemy = null;
@@ -170,7 +170,7 @@ public class Bot extends UT2004BotModuleController {
         //meshInit = new MeshInit(this, navBot, navMeshModule, levelGeometryModule);
 
         //meshInit.initSpawn(gameInfo);
-        navBot = new BotNavigation(this, meshInit);
+        navBot = new BotNavigation(this, /*meshInit*/null);
         stateRunAround = new RunAroundItem(this, navBot);
         engage = new Engage(this, navBot);
         medkit = new Medkit(this, navBot, stateRunAround);

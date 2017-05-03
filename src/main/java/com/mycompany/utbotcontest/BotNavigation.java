@@ -89,7 +89,7 @@ public class BotNavigation {
         
         nmNav.getPathExecutor().addStuckDetector(stuckDetector);
         
-        this.meshInit = meshInit;
+        //this.meshInit = meshInit;
     }
     
     public void botFocus()
