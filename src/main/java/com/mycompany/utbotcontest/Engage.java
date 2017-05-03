@@ -75,7 +75,7 @@ public class Engage {
     }
     
     
-    public void stateEngage() {
+    public Player stateEngage() {
         //log.info("Decision is: ENGAGE");
         //config.setName("Hunter [ENGAGE]");
         bot.getBotName().setInfo("ENGAGE");
@@ -86,7 +86,6 @@ public class Engage {
         double distance = Double.MAX_VALUE;
         mainBot.setPursueCount(0);
         
-
         // 1) pick new enemy if the old one has been lost
         if (enemy == null || !enemy.isVisible()) {
             // pick new enemy
@@ -94,7 +93,7 @@ public class Engage {
             mainBot.setEnemy(enemy);
             if (enemy == null) {
                 log.info("Can't see any enemies... ???");
-                return;
+                return enemy;
             }
         }
 
@@ -106,12 +105,12 @@ public class Engage {
             }
             runningToPlayer = false;
         } else {
-        	// 2) or shoot on enemy if it is visible
-	        distance = info.getLocation().getDistance(enemy.getLocation());
-	        if (mainBot.getShoot().shoot(weaponPrefs, enemy) != null) {
-	            log.info("Shooting at enemy!!!");
-	            shooting = true;
-	        }
+            // 2) or shoot on enemy if it is visible
+            distance = info.getLocation().getDistance(enemy.getLocation());
+            if (mainBot.getShoot().shoot(weaponPrefs, enemy) != null) {
+                log.info("Shooting at enemy!!!");
+                shooting = true;
+            }
         }
 
         // 3) if enemy is far or not visible - run to him
@@ -123,11 +122,11 @@ public class Engage {
             }
         } else {
             runningToPlayer = false;
-            mainBot.getMove().stopMovement();
-            //nmNav.stopNavigation();
+            mainBot.getNavigation().stopNavigation();
         }
         
         navBot.setItem(null);
+        return enemy;
     }
     
     

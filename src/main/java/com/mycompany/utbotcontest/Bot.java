@@ -246,26 +246,9 @@ public class Bot extends UT2004BotModuleController {
     
     @Override
     public void logic() throws PogamutException {
-        /*if (!navMeshModule.isInitialized()) {
-            // Check logs for information, where the bot expects NavMesh file to be present...
-            meshInit.setErrorMsg(meshInit.getErrorMsg() + 1);
-            meshInit.say("NAV MESH NOT INITIALIZED - SEE STARTUP LOGS FOR MORE INFO... (" + (meshInit.getErrorMsg() + ")"));
-            return;
-    	}
-    	    	
-    	if (meshInit.isDrawNavMesh()) {
-    		if (!meshInit.drawNavMesh()) return;
-    	}
-    	
-    	if (!meshInit.isSpeak() && meshInit.isDrawOffMeshLinks()) {
-    		if (!meshInit.drawOffMeshLinks()) return;
-    	}
-    	
-    	if (meshInit.isSpeak()) {
-    		if (!meshInit.speak()) return;
-    	} else {
-    		navigate = true;
-    	}*/
+
+        navBot.botFocus();
+        
          if (!raycasting.getAllRaysInitialized().getFlag()) {
             return;
         }
@@ -281,7 +264,7 @@ public class Bot extends UT2004BotModuleController {
         }
         // mark that another logic iteration has began
         if (shouldEngage && players.canSeeEnemies() && weaponry.hasLoadedWeapon()) {
-            engage.stateEngage();
+            enemy = engage.stateEngage();
             return;
         }
 
@@ -311,7 +294,7 @@ public class Bot extends UT2004BotModuleController {
         }
 
         // 6) if nothing ... run around items
-        //stateRunAround.stateRunAroundItems();
+        stateRunAround.stateRunAroundItems();
 
     }
     

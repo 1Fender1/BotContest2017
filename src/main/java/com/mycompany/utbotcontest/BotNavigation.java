@@ -1,5 +1,7 @@
 package com.mycompany.utbotcontest;
 
+import cz.cuni.amis.pogamut.base.agent.navigation.IPathFuture;
+import cz.cuni.amis.pogamut.base.agent.navigation.impl.PathFuture;
 import cz.cuni.amis.pogamut.base3d.worldview.object.ILocated;
 import cz.cuni.amis.pogamut.base3d.worldview.object.Location;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.AgentInfo;
@@ -16,6 +18,7 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Item;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.NavPoint;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Player;
 import cz.cuni.amis.utils.StopWatch;
+import cz.cuni.amis.utils.collections.MyCollections;
 import cz.cuni.amis.utils.exception.PogamutInterruptedException;
 import java.awt.Color;
 import java.util.ArrayList;
@@ -89,6 +92,40 @@ public class BotNavigation {
         this.meshInit = meshInit;
     }
     
+    public void botFocus()
+    {
+        if (navigation.isNavigating())
+        {
+            try{
+                List<ILocated> chemin = navigation.getPathExecutor().getPath();
+                int element = navigation.getPathExecutor().getPathElementIndex();
+                int tailleChemin = navigation.getPathExecutor().getPath().size();
+                Alea a = new Alea();
+                List<ILocated> debutChemin = new ArrayList<ILocated>();
+                for (int i = 0; i < element; i++)
+                {
+                    debutChemin.add(chemin.get(i));
+                }
+                List<ILocated> finChemin = new ArrayList<ILocated>();
+                for (int i = element; i < tailleChemin; i++)
+                {
+                    debutChemin.add(chemin.get(i));
+                }
+                if (a.pourcentDeChance(70))
+                {
+                    navigation.setFocus(MyCollections.getRandom(finChemin));
+                }
+                else
+                {
+                    navigation.setFocus(MyCollections.getRandom(debutChemin));
+                }
+            }catch(NullPointerException npe)
+            {
+                System.out.println("Erreur sur la navigation");
+            }
+        }
+    }
+    
     private void raycast() {
     	if (!levelGeometryModule.isInitialized()) return;
     	
@@ -154,8 +191,6 @@ public class BotNavigation {
 		}	
 	}
 
-	
-    
     
     public boolean reachable(Item item)
     {
@@ -195,26 +230,11 @@ public class BotNavigation {
 }
     
     public boolean navigate() {
-    	//body.getCommunication().sendGlobalTextMessage("SPEED: " + info.getVelocity().size());
-    	/*if (stuckDetector.isStuck())
-        {
-            stuckDetector.reset();
-            System.out.println("---------J'essaie d'atteindre ce foutu point ! --------------");
-            return false;
-        }*/
-    	/*if (nmNav.isNavigating()) 
-            return false;*/
-    	/*if (raycasting) {
-            raycast();
-    	}*/
-        /*if (!reachable(np))
-            return false;
-        nmNav.navigate(np);*/
         
         if (navigation.isNavigating())
             return false;
         
-    	NavPoint np = navPoints.getRandomNavPoint();
+        NavPoint np = navPoints.getRandomNavPoint();
         
         navigation.navigate(np);
     	
@@ -222,22 +242,7 @@ public class BotNavigation {
     }
     
     public boolean navigate(ILocated item) {
-    	//body.getCommunication().sendGlobalTextMessage("SPEED: " + info.getVelocity().size());
-    	//.setBotTarget(item);
-        /*if (stuckDetector.isStuck())
-        {
-            stuckDetector.reset();
-            System.out.println("---------J'essaie d'atteindre ce foutu point ! --------------");
-            return false;
-        }*/
-    	//if (nmNav.isNavigating()) return false;
-    	/*if (raycasting) {
-    		raycast();
-    	}*/
-    	/*if (!reachable(item))
-            return false;*/
-    	//nmNav.navigate(item);
-        
+
         if (navigation.isNavigating()) return false;
         navigation.navigate(item);
                
@@ -245,21 +250,6 @@ public class BotNavigation {
     }
     
     public boolean navigate(Item item) {
-    	//body.getCommunication().sendGlobalTextMessage("SPEED: " + info.getVelocity().size());
-    	/*stuckDetector.setBotTarget(item);
-        if (stuckDetector.isStuck())
-        {
-            stuckDetector.reset();
-            System.out.println("---------J'essaie d'atteindre ce foutu point ! --------------");
-            return false;
-        }*/
-    	//if (nmNav.isNavigating()) return false;
-    	/*if (raycasting) {
-    		raycast();
-    	}
-    	if (!reachable(item))
-            return false;*/
-    	//nmNav.navigate(item);
         
          if (navigation.isNavigating()) return false;
          
@@ -269,22 +259,6 @@ public class BotNavigation {
     }
 
     public boolean navigate(Player item) {
-    //body.getCommunication().sendGlobalTextMessage("SPEED: " + info.getVelocity().size());
-    /*stuckDetector.setBotTarget(item);
-    if (stuckDetector.isStuck())
-    {
-        stuckDetector.reset();
-        System.out.println("---------J'essaie d'atteindre ce foutu point ! --------------");
-        return false;
-    }*/
-    //if (nmNav.isNavigating()) return false;
-       /*if (raycasting) {
-        raycast();
-    }*/
-    /*if (!reachable(item))
-        return false;*/
-
-    //nmNav.navigate(item);
 
     if (navigation.isNavigating()) return false;
     

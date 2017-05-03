@@ -9,6 +9,7 @@ import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Game;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Items;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.NavPoints;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.WeaponPrefs;
+import cz.cuni.amis.pogamut.ut2004.agent.module.utils.TabooSet;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.pathfollowing.NavMeshNavigation;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType;
@@ -241,7 +242,8 @@ public class RunAroundItem {
                     min = info.getLocation().getDistance(it.getLocation());
                 }
             }
-            return item;}
+            return item;
+        }
         else return null;
     }
     
@@ -260,7 +262,10 @@ public class RunAroundItem {
         addItemsInList(listItem);
         Item itemProche = getNextItem (listHealth,listWeapon,listArmor,listAmmo);
         listHealth.clear(); listWeapon.clear(); listArmor.clear(); listAmmo.clear();
-        
+        if (itemProche != null)
+        {
+            System.out.println("Item proche : " + itemProche.toString());
+        }
         return itemProche;        
     }
     
@@ -334,22 +339,21 @@ protected List<Item> itemsToRunAround = null;
        min = 0; damage = null;
         
         if (item == null) {
-        	log.warning("NO ITEM TO RUN FOR!");
-        	if (nmNav.isNavigating()) return;
-        	bot.getBotName().setInfo("RANDOM NAV");
-                navBot.navigate();
+            log.warning("NO ITEM TO RUN FOR!");
+            if (nmNav.isNavigating()) return;
+            bot.getBotName().setInfo("RANDOM NAV");
+            navBot.navigate();
         } else {
-        	navBot.setItem(item);
-        	log.info("RUNNING FOR: " + item.getType().getName());
-        	bot.getBotName().setInfo("ITEM: " + item.getType().getName() + "");
-                navBot.navigate(item);
+            navBot.setItem(item);
+            log.info("RUNNING FOR: " + item.getType().getName());
+            bot.getBotName().setInfo("ITEM: " + item.getType().getName() + "");
+            navBot.navigate(item);
         }        
     }
 
     public void setItemsToRunAround(List<Item> itemsToRunAround) {
         this.itemsToRunAround = itemsToRunAround;
     }
-    
     
     
 }

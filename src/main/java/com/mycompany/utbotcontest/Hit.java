@@ -90,7 +90,7 @@ public class Hit {
         protected void stateHit() {
             //log.info("Decision is: HIT");
             bot.getBotName().setInfo("HIT");
-                move.stopMovement();
+                mainBot.getNavigation().stopNavigation();
                 mainBot.getAct().act(new Rotate().setAmount(32000));
                 if (mainBot.getPlayers().canSeeEnemies()) {
                     this.enemy = mainBot.getPlayers().getNearestVisibleEnemy();
