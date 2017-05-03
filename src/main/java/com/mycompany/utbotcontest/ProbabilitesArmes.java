@@ -50,17 +50,18 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
     
     private double epsilon = 0.2;
     private double randNumber = 0;
+    private int max_value = 100;
     
     public void initProbabilitesA() {
-        ProbabilitesArmes rocket = new ProbabilitesArmes(UT2004ItemType.ROCKET_LAUNCHER, 0.7, 0.1, 0, 0);
-        ProbabilitesArmes flak = new ProbabilitesArmes(UT2004ItemType.FLAK_CANNON, 0.7, 0.2, 0, 0);
-        ProbabilitesArmes lightning = new ProbabilitesArmes(UT2004ItemType.LIGHTNING_GUN, 0.7, 0.2, 0, 0);
-        ProbabilitesArmes minigun = new ProbabilitesArmes(UT2004ItemType.MINIGUN, 0.6, 0.3, 0, 0);
-        ProbabilitesArmes link = new ProbabilitesArmes(UT2004ItemType.LINK_GUN, 0.6, 0.4, 0, 0);
-        ProbabilitesArmes assault = new ProbabilitesArmes(UT2004ItemType.ASSAULT_RIFLE, 0.5, 0.5, 4, 7);
-        ProbabilitesArmes shock = new ProbabilitesArmes(UT2004ItemType.SHOCK_RIFLE, 0.4, 0.5, 0, 0);
-        ProbabilitesArmes bio = new ProbabilitesArmes(UT2004ItemType.BIO_RIFLE, 0.4, 0.5, 0, 0);
-        ProbabilitesArmes shield = new ProbabilitesArmes(UT2004ItemType.SHIELD_GUN, 0.4, 0.5, 0, 0);
+        ProbabilitesArmes rocket = new ProbabilitesArmes(UT2004ItemType.ROCKET_LAUNCHER, 0.7, 1, 0, 0);
+        ProbabilitesArmes flak = new ProbabilitesArmes(UT2004ItemType.FLAK_CANNON, 0.7, 2, 0, 0);
+        ProbabilitesArmes lightning = new ProbabilitesArmes(UT2004ItemType.LIGHTNING_GUN, 0.7, 2, 0, 0);
+        ProbabilitesArmes minigun = new ProbabilitesArmes(UT2004ItemType.MINIGUN, 0.6, 3, 0, 0);
+        ProbabilitesArmes link = new ProbabilitesArmes(UT2004ItemType.LINK_GUN, 0.6, 4, 0, 0);
+        ProbabilitesArmes assault = new ProbabilitesArmes(UT2004ItemType.ASSAULT_RIFLE, 0.5, 5, 0, 0);
+        ProbabilitesArmes shock = new ProbabilitesArmes(UT2004ItemType.SHOCK_RIFLE, 0.4, 5, 0, 0);
+        ProbabilitesArmes bio = new ProbabilitesArmes(UT2004ItemType.BIO_RIFLE, 0.4, max_value, 0, 0);
+        ProbabilitesArmes shield = new ProbabilitesArmes(UT2004ItemType.SHIELD_GUN, 0,max_value, 0, 0);
         referencesArmes.add(rocket);
         referencesArmes.add(flak);
         referencesArmes.add(lightning);
@@ -138,7 +139,8 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
                 index++;
             }
             pa = referencesArmes.get(index);
-            inventaireArmes.add(pa);  
+            inventaireArmes.add(pa);
+            index = 0;
         }
     }
     
@@ -156,7 +158,7 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
         else {
            Collections.sort(inventaireArmes);
            Collections.reverse(inventaireArmes);
-           pa = inventaireArmes.get(0);
+           pa = referencesArmes.get(0);
         }
         return pa.nom;
     }

@@ -11,6 +11,7 @@ import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.pathfollowing.NavMes
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.StopShooting;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Player;
+import cz.cuni.amis.pogamut.ut2004.utils.UnrealUtils;
 import java.util.Random;
 
 /**
@@ -44,6 +45,8 @@ public class Engage {
     private Player enemy;
     
     private boolean runningToPlayer;
+    
+    private boolean strafeL = false;
     
     public Engage(Bot mainBot, BotNavigation navBot)
     {
@@ -110,6 +113,13 @@ public class Engage {
             if (mainBot.getShoot().shoot(weaponPrefs, enemy) != null) {
                 log.info("Shooting at enemy!!!");
                 shooting = true;
+                if(!strafeL){
+                    mainBot.getMove().strafeLeft(UnrealUtils.CHARACTER_COLLISION_RADIUS * 10,enemy.getLocation());
+                    strafeL = true;
+                }else{
+                    mainBot.getMove().strafeRight(UnrealUtils.CHARACTER_COLLISION_RADIUS * 10,enemy.getLocation());
+                    strafeL = false;
+                }
             }
         }
 

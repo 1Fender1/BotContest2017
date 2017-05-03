@@ -1,5 +1,6 @@
 package com.mycompany.utbotcontest;
 
+import static com.mycompany.utbotcontest.ProbabilitesArmes.inventaireArmes;
 import static com.mycompany.utbotcontest.ProbabilitesArmes.referencesArmes;
 import cz.cuni.amis.pogamut.base.utils.logging.LogCategory;
 import cz.cuni.amis.pogamut.base.utils.math.DistanceUtils;
@@ -9,12 +10,15 @@ import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Game;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Items;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.NavPoints;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.WeaponPrefs;
-import cz.cuni.amis.pogamut.ut2004.agent.module.utils.TabooSet;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.pathfollowing.NavMeshNavigation;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType.Category;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.UT2004ItemType;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Item;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.GameInfo;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.GameInfo.GameInfoUpdate;
+import cz.cuni.amis.pogamut.ut2004.utils.UnrealUtils;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,6 +53,12 @@ public class RunAroundItem {
     private ProbabilitesArmes probaA;
     
     private final double radius = 500;
+    
+    private Alea probaAlea = new Alea();
+    
+    private final int nbTypeItems = 5;
+    
+    private final double tauxProbaArme = 0.5;
     
     public RunAroundItem(Bot mainBot, BotNavigation navBot)
     {
@@ -136,6 +146,10 @@ public class RunAroundItem {
         System.out.println("damage:   "+d);
       }
       
+      ////////////////////////
+      //SELECT ITEM IN LIST//
+      ///////////////////////
+      
       //Si on a besoin de vie, alors on sélectionne l'item le plus proche dans la liste vie
       protected Item selectItemInListHealth(List<Item> listH){
           Item itHealth = null;
@@ -222,8 +236,71 @@ public class RunAroundItem {
           return itAdrenaline;
       }
       
+      //////////////////////////
+      //PROBABIITE DE L'EVENT//
+      /////////////////////////
+      protected int probaHealth(){
+          return (100-((info.getHealth()+1)/2));
+      }
+      
+      protected int probaArmor(){
+          int pourcentShield;
+          if(!items.getAllItems(UT2004ItemType.SUPER_SHIELD_PACK).isEmpty())
+              pourcentShield = (info.getArmor()*100)/150;
+          else
+              pourcentShield = (info.getArmor()*100)/50;
+          return (100-pourcentShield);
+      }
+      
+      protected int probaWeapon(){
+          float nbWeapon=0;
+          float compteurArme = 0;
+          for(ProbabilitesArmes pa : referencesArmes){
+              if(pa.getProbabilite() >= tauxProbaArme){
+                for(ItemType weap : ItemType.Category.WEAPON.getTypes()){
+                          if(mainBot.getWeaponry().hasWeapon(weap) && weap.getGroup().toString().equals(pa.getNom().getGroup().toString())){
+                              nbWeapon++;
+                          }
+                }
+                compteurArme++;
+              }
+          }
+          return (int)(100 - ((nbWeapon/compteurArme)*100));
+      }
+      
+      protected int probaAmmo(){
+          float sommeMaxAmmo = 0;
+          float sommeCurrentAmmo = 0;
+          if(inventaireArmes.isEmpty())
+              return 0;
+            for(ProbabilitesArmes pa: referencesArmes){
+                if(pa.getProbabilite() >= tauxProbaArme){
+                    for(ItemType ammoType : ItemType.Category.AMMO.getTypes()){
+                          if(mainBot.getWeaponry().hasAmmo(ammoType) && ammoType.getGroup().toString().equals(pa.getNom().getGroup().toString())){
+                              sommeMaxAmmo += weaponry.getMaxAmmo(ammoType);
+                              sommeCurrentAmmo += weaponry.getAmmo(ammoType);
+                          }
+                    }
+                }
+            }
+            return (int)(100 - ((sommeCurrentAmmo/sommeMaxAmmo)*100));
+      }
+      
+      protected int probaUDamage(){
+          return 0;
+      }
+      
     protected Item getNextItem (List<Item> listH,List<Item> listW,List<Item> listA,List<Item> listAm){
-       Item item = null;
+        int besoinH = probaHealth();
+        int besoinW = probaWeapon();
+        int besoinA = probaArmor();
+        int besoinAm = probaAmmo();
+        System.out.println("Besoin de vie:   "+besoinH);
+        System.out.println("Besoin d'arme:   "+besoinW);
+        System.out.println("Besoin d'armure:   "+besoinA);
+        System.out.println("Besoin de munitions:   "+besoinAm);
+        Item item = null;
+        
         if(weaponry.getWeapons().size() == 2 && !listW.isEmpty())
             return selectItemInListWeapon(listW);
         else if(info.getHealth() <= 100 && !listH.isEmpty())
@@ -242,8 +319,7 @@ public class RunAroundItem {
                     min = info.getLocation().getDistance(it.getLocation());
                 }
             }
-            return item;
-        }
+            return item;}
         else return null;
     }
     
@@ -262,10 +338,7 @@ public class RunAroundItem {
         addItemsInList(listItem);
         Item itemProche = getNextItem (listHealth,listWeapon,listArmor,listAmmo);
         listHealth.clear(); listWeapon.clear(); listArmor.clear(); listAmmo.clear();
-        if (itemProche != null)
-        {
-            System.out.println("Item proche : " + itemProche.toString());
-        }
+        
         return itemProche;        
     }
     
@@ -336,24 +409,26 @@ protected List<Item> itemsToRunAround = null;
        {
            System.out.println("Je vais chercher l'item le plus proche !");
        }
-       min = 0; damage = null;
+       min = 0; damage = null; /*indice = 0;
+       for(int i =0; i<5; i++){
+           tabProba[i] = 0;
+           tabItem[i] = null;
+       }*/
         
         if (item == null) {
-            log.warning("NO ITEM TO RUN FOR!");
-            if (nmNav.isNavigating()) return;
-            bot.getBotName().setInfo("RANDOM NAV");
-            navBot.navigate();
+        	log.warning("NO ITEM TO RUN FOR!");
+        	if (nmNav.isNavigating()) return;
+        	bot.getBotName().setInfo("RANDOM NAV");
+                navBot.navigate();
         } else {
-            navBot.setItem(item);
-            log.info("RUNNING FOR: " + item.getType().getName());
-            bot.getBotName().setInfo("ITEM: " + item.getType().getName() + "");
-            navBot.navigate(item);
+        	navBot.setItem(item);
+        	log.info("RUNNING FOR: " + item.getType().getName());
+        	bot.getBotName().setInfo("ITEM: " + item.getType().getName() + "");
+                navBot.navigate(item);
         }        
     }
 
     public void setItemsToRunAround(List<Item> itemsToRunAround) {
         this.itemsToRunAround = itemsToRunAround;
     }
-    
-    
 }
