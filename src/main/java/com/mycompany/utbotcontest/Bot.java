@@ -248,7 +248,7 @@ public class Bot extends UT2004BotModuleController {
     public void logic() throws PogamutException {
         Alea pourcentChangeArme = new Alea();
         navBot.botFocus();
-        
+        navBot.mouvementAleatoire();
          if (!raycasting.getAllRaysInitialized().getFlag()) {
             return;
         }

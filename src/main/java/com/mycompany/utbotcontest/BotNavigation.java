@@ -13,6 +13,7 @@ import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.LevelGeometryModule;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.drawing.UT2004Draw;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.pathfollowing.NavMeshNavigation;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.stuckdetector.AccUT2004DistanceStuckDetector;
+import cz.cuni.amis.pogamut.ut2004.bot.command.AdvancedLocomotion;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Item;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.NavPoint;
@@ -66,6 +67,12 @@ public class BotNavigation {
     private MeshInit meshInit;
     
     private IUT2004Navigation navigation;
+    
+    private Alea alea;
+    
+    private AdvancedLocomotion move;
+    
+    private long debut=0;
         
     public BotNavigation(Bot mainBot, MeshInit meshInit)
     {
@@ -81,14 +88,14 @@ public class BotNavigation {
         
         info = mainBot.getInfo();
         draw = mainBot.getDraw();
-        
+        move = mainBot.getMove();
         levelGeometryModule = mainBot.getLevelGeometryModule();
         
         navPoints = mainBot.getNavPoints();
         nmNav = mainBot.getNmNav();
         
         nmNav.getPathExecutor().addStuckDetector(stuckDetector);
-        
+        alea = new Alea();
         //this.meshInit = meshInit;
     }
     
@@ -268,7 +275,22 @@ public class BotNavigation {
 }
         
         
-    
+    public void mouvementAleatoire(){
+    if(navigation.isNavigating()){
+            double distanceStrafe = Math.random()*50+200;
+            if(700<System.currentTimeMillis()-debut){
+                debut = System.currentTimeMillis();
+                if(alea.pourcentDeChance(100.0)){
+                    if(alea.uneChanceSur(2)){
+                        move.strafeRight(distanceStrafe);
+                    }
+                    else{
+                        move.strafeLeft(distanceStrafe);
+                    }
+                }
+           }
+        }
+    }
     public Item getItem() {
         return item;
     }
