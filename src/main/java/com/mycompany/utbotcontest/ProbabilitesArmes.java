@@ -22,6 +22,7 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.UT2004ItemType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -51,6 +52,7 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
     private double epsilon = 0.2;
     private double randNumber = 0;
     private int max_value = 100;
+    private int sizeInventaire = 0;
     
     public void initProbabilitesA() {
         ProbabilitesArmes rocket = new ProbabilitesArmes(UT2004ItemType.ROCKET_LAUNCHER, 0.7, 1, 0, 0);
@@ -92,6 +94,10 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
         return this.nbDefaite;
     }
     
+    public void setSize(int nb) {
+        this.sizeInventaire = nb;
+    }
+    
     //INCREMENTE LE NOMBRE DE VICTOIRE DE L'ARME
     public void nbVIncrement(String weapon) {
         int index = 0;
@@ -127,21 +133,38 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
         return new Double(probabilite).compareTo(o.probabilite);
     }
     
-     public void inventaireBot(Weaponry w) {
+    public void affichageInventaire() {
+       Iterator<ProbabilitesArmes> it = inventaireArmes.iterator(); 
+       while (it.hasNext()) {
+           System.out.println("INVENTAIRE DU BOT = " + it.next());
+       }
+    }
+    
+    public int indexWeapon (String Weapon) {
+        int index = 0;
+        Iterator<ProbabilitesArmes> it = referencesArmes.iterator();
+        while (it.hasNext() && !it.next().nom.getGroup().getName().equals(Weapon)) {
+            index++;
+        }
+        return index;
+    }
+    
+    public void inventaireBot(Weaponry w) {
+        List<ProbabilitesArmes> list = new ArrayList<ProbabilitesArmes>(new LinkedHashSet<ProbabilitesArmes>());
         Weapon wp = null;
         int index = 0;
         ProbabilitesArmes pa = null;
-        Iterator<ProbabilitesArmes> it = referencesArmes.iterator();
         for (Iterator i = w.getWeapons().entrySet().iterator(); i.hasNext();) {
             Map.Entry couple = (Map.Entry)i.next();
-            wp = (Weapon) couple.getValue();       
-            while (it.hasNext() && !it.next().nom.getGroup().getName().equals(wp.getGroup().getName())) {
-                index++;
-            }
+            wp = (Weapon) couple.getValue();     
+            index = indexWeapon(wp.getGroup().getName());
             pa = referencesArmes.get(index);
-            inventaireArmes.add(pa);
+            list.add(pa);  
             index = 0;
         }
+        inventaireArmes.clear();
+        inventaireArmes.addAll(list);
+        setSize(inventaireArmes.size());
     }
     
     //CHOIX DE L'ARME
@@ -150,15 +173,23 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
         ProbabilitesArmes pa = null;
         Random r = new Random();
         int randomWeapon;
-        inventaireBot(w);
+        if (sizeInventaire == 0) {
+           inventaireBot(w); 
+        }
+        if (sizeInventaire <= w.getWeapons().size()) {
+            inventaireBot(w);
+        }
         if (randNumber < epsilon) {
-            randomWeapon = r.nextInt(inventaireArmes.size());
+            randomWeapon = r.nextInt(w.getWeapons().size());
+            System.out.println("ARME AU HASARD = " + pa);
             pa = inventaireArmes.get(randomWeapon);
         }
         else {
+           affichageInventaire();
            Collections.sort(inventaireArmes);
            Collections.reverse(inventaireArmes);
-           pa = referencesArmes.get(0);
+           pa = inventaireArmes.get(0);
+           System.out.println("MEILLEURE ARME = " + pa);
         }
         return pa.nom;
     }

@@ -246,7 +246,7 @@ public class Bot extends UT2004BotModuleController {
     
     @Override
     public void logic() throws PogamutException {
-
+        Alea pourcentChangeArme = new Alea();
         navBot.botFocus();
         
          if (!raycasting.getAllRaysInitialized().getFlag()) {
@@ -259,7 +259,7 @@ public class Bot extends UT2004BotModuleController {
         if (!weaponry.getCurrentWeapon().getGroup().getName().equals(lastWeaponUsed)) {
             lastWeaponUsed = weaponry.getCurrentWeapon().getGroup().getName();
         }
-        if (weaponry.getWeapons().size() > 2 && !players.canSeeEnemies()) {
+        if (pourcentChangeArme.pourcentDeChance(30) && weaponry.getWeapons().size() > 2 && (info.isShooting() || info.isSecondaryShooting())) {
             weaponry.changeWeapon(probaA.choixArme(weaponry));
         }
         // mark that another logic iteration has began
@@ -288,8 +288,12 @@ public class Bot extends UT2004BotModuleController {
         
         // 5) are you hurt?			-> get yourself some medKit
         if (shouldCollectHealth && info.getHealth() < healthLevel) {
+                if (info.getArmor() == 0 && info.getHealth() <= 50) {
+                    shouldPursue = false;
+                    shouldEngage = false;
+                    medkit.stateFuite();
+                }
                 medkit.stateMedKit();
-                //medkit.stateFlee();
             return;
         }
 
@@ -304,6 +308,8 @@ public class Bot extends UT2004BotModuleController {
     public void botKilled(BotKilled event) {
         probaA.nbDIncrement(lastWeaponUsed);
         probaA.updateProba(lastWeaponUsed);
+        probaA.inventaireArmes.clear();
+        probaA.setSize(0);
     	reset();
     }
 
@@ -424,5 +430,17 @@ public class Bot extends UT2004BotModuleController {
     public boolean getRight90() {
         return right.isResult();
     }
+    
+    public void setPursue(Boolean etat) {
+        this.shouldPursue = etat;
+    }
+    
+    public void setEngage(Boolean etat) {
+        this.shouldEngage = etat;
+    }
+    
+    public void setMedkit(Boolean etat) {
+        this.shouldCollectHealth = etat;
+    }    
     
 }
