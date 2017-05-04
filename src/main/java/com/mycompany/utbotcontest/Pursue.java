@@ -12,6 +12,7 @@ import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.WeaponPrefs;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.pathfollowing.NavMeshNavigation;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Player;
+import java.util.HashSet;
 
 /**
  *
@@ -79,13 +80,18 @@ public class Pursue {
     protected void statePursue() {
         //log.info("Decision is: PURSUE");
         bot.getBotName().setInfo("PURSUE");
+        enemy = mainBot.getEnemy();
         mainBot.setPursueCount(mainBot.getPursueCount() + 1);
         if (mainBot.getPursueCount() > 30) {
             mainBot.reset();
         }
         if (enemy != null) {
         	bot.getBotName().setInfo("PURSUE");
-        	navBot.navigate(enemy);
+                mainBot.getNavPoints().getNearestNavPoint(enemy.getLocation());
+        	navBot.navigate(enemy.getLocation());
+                mainBot.getNavigation().setContinueTo(enemy.getLocation());
+                mainBot.getNavigation().setFocus(enemy.getLocation());
+            
         	navBot.setItem(null);
         } else {
             navBot.setItem(null);

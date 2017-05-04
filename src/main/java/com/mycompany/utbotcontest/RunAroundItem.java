@@ -10,6 +10,7 @@ import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Game;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Items;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.NavPoints;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.WeaponPrefs;
+import cz.cuni.amis.pogamut.ut2004.agent.navigation.NavigationState;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.pathfollowing.NavMeshNavigation;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType;
@@ -242,25 +243,23 @@ public class RunAroundItem {
       ///////////////////////
       
       //Si on a besoin de vie, alors on sélectionne l'item le plus proche dans la liste vie
-      protected Item selectItemInListHealth(List<Item> listH){
-          Item itHealth = null;
-          if (listH.isEmpty())
-              return null;
-          if(info.getHealth() < 120){
-                min = info.getLocation().getDistance(listH.get(0).getLocation());
-                for(Item vie : listH){
-                    if(info.getHealth() < 100 && info.getLocation().getDistance(vie.getLocation()) <= min){
-                        itHealth = vie;
-                        min = info.getLocation().getDistance(vie.getLocation());
-                    }
-                    if(info.getHealth() >= 100 && vie.getType() == UT2004ItemType.MINI_HEALTH_PACK && info.getLocation().getDistance(vie.getLocation()) <= min){
-                        itHealth = vie;
-                        min = info.getLocation().getDistance(vie.getLocation());
-                    }
-                }
-            }
-            return itHealth;
-      }
+    protected Item selectItemInListHealth(List<Item> listH){
+        Item itHealth = null;
+        if (listH.isEmpty())
+            return null;
+          min = info.getLocation().getDistance(listH.get(0).getLocation());
+          for(Item vie : listH){
+              if(info.getHealth() < 100 && info.getLocation().getDistance(vie.getLocation()) <= min){
+                  itHealth = vie;
+                  min = info.getLocation().getDistance(vie.getLocation());
+              }
+              if(info.getHealth() >= 100 && vie.getType() == UT2004ItemType.MINI_HEALTH_PACK && info.getLocation().getDistance(vie.getLocation()) <= min){
+                  itHealth = vie;
+                  min = info.getLocation().getDistance(vie.getLocation());
+              }
+          }
+        return itHealth;
+    }
       
       //On sélectionne l'item correspondant à l'arme préférée du bot
       protected Item selectItemInListWeapon(List<Item> listW){
@@ -288,11 +287,10 @@ public class RunAroundItem {
       }
       
       //Si on a besoin d'armure, alors on sélectionne l'item correspondant à l'armure la plus proche
-      protected Item selectItemInListArmor(List<Item> listA){
-          Item itArmor = null;
-          if (listA.isEmpty())
-              return null;
-          if(info.getArmor() < 100){
+        protected Item selectItemInListArmor(List<Item> listA){
+            Item itArmor = null;
+            if (listA.isEmpty())
+                return null;
             min = info.getLocation().getDistance(listA.get(0).getLocation());
             for(Item armor : listA){
                 if(info.getArmor() < 50 && info.getLocation().getDistance(armor.getLocation()) <= min){
@@ -305,9 +303,8 @@ public class RunAroundItem {
                     }
                 }
             }
+            return itArmor;
         }
-          return itArmor;
-      }
       
       //On sélectionne l'item correspondant aux munitions que le bot a besoin
       protected Item selectItemInListAmmo(List<Item> listAm){
@@ -330,7 +327,7 @@ public class RunAroundItem {
       //PROBABIITE DE L'EVENT//
       /////////////////////////
       protected int probaHealth(){
-          return (100-((info.getHealth()+1)/2));
+          return (100-((info.getHealth()*100)/mainBot.getGame().getMaxHealth()));
       }
       
       protected int probaArmor(){
@@ -432,11 +429,34 @@ public class RunAroundItem {
                 listItem.add(item);
             }
         }
-        addItemsInList(listItem);
-        Item itemProche = getNextItem (listHealth,listWeapon,listArmor,listAmmo);
-        listHealth.clear(); listWeapon.clear(); listArmor.clear(); listAmmo.clear();
         
-        return itemProche;        
+
+        
+        for (Item item : listItem)
+        {
+            if (item.getType().getCategory().toString().equals("HEALTH") && probaHealth() > 0)
+            {
+                return item;
+            }
+            if (item.getType().getCategory().toString().equals("ARMOR") && probaArmor() > 0)
+            {
+                return item;
+            }
+            if (item.getType().getCategory().toString().equals("WEAPON") && probaWeapon() > 0)
+            {
+                return item;
+            }
+            if (item.getType().getCategory().toString().equals("AMMO") && probaAmmo() > 0)
+            {
+                return item;
+            }
+            if (item.getType().getCategory().toString().equals("OTHER") && probaUDamage() > 0)
+            {
+                return item;
+            }
+        }
+        
+        return null;        
     }
     
 
@@ -448,8 +468,15 @@ protected List<Item> itemsToRunAround = null;
     protected void stateRunAroundItems() {
         //log.info("Decision is: ITEMS");
         //config.setName("Hunter [ITEMS]");
-        bot.getBotName().setInfo("RUN AROUND ITEM");
-
+        if (mainBot.getNavigation().isNavigatingToItem() && navBot.getItem() != null)
+        {
+            bot.getBotName().setInfo("ITEM: " + navBot.getItem().getType().getName() + "");
+        }
+        else
+        {
+            bot.getBotName().setInfo("RUN AROUND ITEM");
+        }
+       
         if (mainBot.getNavigation().isNavigatingToItem()) return;
         
         List<Item> interesting = new ArrayList<Item>();
@@ -494,25 +521,27 @@ protected List<Item> itemsToRunAround = null;
         }
         
        // Item item = MyCollections.getRandom(tabooItems.filter(interesting));
-       Item item;
+       Item item = null;
        item = existNearInterstingItem(interesting);
+       navBot.setItem(item);
        if (item == null)
        {
             addItemsInList(interesting);
             item = getNextItem (listHealth,listWeapon,listArmor,listAmmo);
-            System.out.println("==========Item : " + item + "==============");
             listHealth.clear(); listWeapon.clear(); listArmor.clear(); listAmmo.clear();
+            navBot.setItem(item);
        }
        else
        {
            System.out.println("Je vais chercher l'item le plus proche !");
        }
+       
+       
        min = 0; damage = null; /*indice = 0;
        for(int i =0; i<5; i++){
            tabProba[i] = 0;
            tabItem[i] = null;
        }*/
-        
         if (item == null) {
         	log.warning("NO ITEM TO RUN FOR!");
         	if (mainBot.getNavigation().isNavigatingToItem()) return;

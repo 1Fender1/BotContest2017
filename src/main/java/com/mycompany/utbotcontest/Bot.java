@@ -262,8 +262,14 @@ public class Bot extends UT2004BotModuleController {
         if (pourcentChangeArme.pourcentDeChance(30) && weaponry.getWeapons().size() > 2 && (info.isShooting() || info.isSecondaryShooting())) {
             weaponry.changeWeapon(probaA.choixArme(weaponry));
         }
+        
+        if (players.canSeeEnemies())
+        {
+            enemy = players.getNearestVisibleEnemy();
+        }
+        
         // mark that another logic iteration has began
-        if (shouldEngage && players.canSeeEnemies() && weaponry.hasLoadedWeapon()) {
+        if (shouldEngage && enemy != null && players.canSeeEnemies() && info.isFacing(enemy, 45) && weaponry.hasLoadedWeapon()) {
             enemy = engage.stateEngage();
             return;
         }
