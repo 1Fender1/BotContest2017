@@ -1,6 +1,7 @@
 package com.mycompany.utbotcontest;
 
 import cz.cuni.amis.pogamut.base.utils.logging.LogCategory;
+import cz.cuni.amis.pogamut.base3d.worldview.object.Location;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weaponry;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.AgentInfo;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Game;
@@ -46,7 +47,7 @@ public class Engage {
     
     private boolean runningToPlayer;
     
-    private boolean strafeL = false;
+    private double longueurStrafe = UnrealUtils.CHARACTER_COLLISION_RADIUS * 10;
     
     public Engage(Bot mainBot, BotNavigation navBot)
     {
@@ -113,12 +114,39 @@ public class Engage {
             if (mainBot.getShoot().shoot(weaponPrefs, enemy) != null) {
                 log.info("Shooting at enemy!!!");
                 shooting = true;
-                if(!strafeL){
-                    mainBot.getMove().strafeLeft(UnrealUtils.CHARACTER_COLLISION_RADIUS * 10,enemy.getLocation());
-                    strafeL = true;
-                }else{
-                    mainBot.getMove().strafeRight(UnrealUtils.CHARACTER_COLLISION_RADIUS * 10,enemy.getLocation());
-                    strafeL = false;
+                int movement = random.nextInt(3);
+                
+                //0 -> strafeLeft
+                //1 -> strafeRight
+                //2 -> jump
+                switch(movement){
+                    case 0: if(mainBot.getLeft90()) 
+                                mainBot.getMove().strafeRight(longueurStrafe,enemy.getLocation());
+                            else
+                                mainBot.getMove().strafeLeft(longueurStrafe,enemy.getLocation());
+                            break;
+                    case 1: if(mainBot.getRight90())
+                                mainBot.getMove().strafeLeft(longueurStrafe,enemy.getLocation());
+                            else
+                                mainBot.getMove().strafeRight(longueurStrafe,enemy.getLocation());
+                            break;
+                    case 2: int randX = (random.nextInt()%250) + 25;
+                            int randY = (random.nextInt()%250) + 25;
+                            boolean signeX = random.nextBoolean();
+                            boolean signeY = random.nextBoolean();
+                            Location loc = info.getLocation();
+                            if(signeX)
+                                loc.setX((double)randX);
+                            else
+                                loc.setX((double)-randX);
+                            if(signeY)
+                                loc.setY((double)randY);
+                            else
+                                loc.setY((double)-randY);
+                            mainBot.getMove().moveTo(loc);
+                            mainBot.getMove().jump();
+                            break;
+                    default: break;
                 }
             }
         }
