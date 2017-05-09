@@ -351,31 +351,7 @@ public class BotNavigation {
 
     return false;
 }*/
-   boolean dansA=false;
-    public void handleLift(List<ILocated> chemin, boolean b){
-        int index = navigation.getPathExecutor().getPathElementIndex();
-        if(index>0){
-            double distanceZ=chemin.get(index).getLocation().getDistanceZ(chemin.get(index-1).getLocation());
-            System.out.println("DistanceZ : " + distanceZ);
-            
-            if(b && distanceZ>300){
-                dansA=true;
-            }
-            else{
-                if(dansA=true){
-                    if(index+1<chemin.size()){
-                        move.dodgeTo(chemin.get(index+1), false);
-                    }
-                    dansA=false;
-                }
-            }
-        }
-    }
-    public void handleStuck(){
-        move.jump(0.4);
-        return;
-    }
-    
+  
     public void mouvementAleatoire(){
         if(isNavigating()){
             /*if(stuckDetector.isStuck()){
