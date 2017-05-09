@@ -402,7 +402,6 @@ public class BotNavigation {
                         double distanceStrafe = 100;
                             
                             if(/*700<System.currentTimeMillis()-debut &&*/ alea.pourcentDeChance(100.0)){
-                                debut = System.currentTimeMillis();
                                 if(alea.uneChanceSur(2)){
                                     move.strafeRight(distanceStrafe);
                                 }
