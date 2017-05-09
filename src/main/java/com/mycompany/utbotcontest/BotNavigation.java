@@ -8,6 +8,7 @@ import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.AgentInfo;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.NavPoints;
 import cz.cuni.amis.pogamut.ut2004.agent.module.utils.TabooSet;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.IUT2004Navigation;
+import cz.cuni.amis.pogamut.ut2004.agent.navigation.astar.UT2004AStar;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.LevelGeometry;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.LevelGeometryModule;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.drawing.UT2004Draw;
@@ -68,17 +69,26 @@ public class BotNavigation {
     
     private IUT2004Navigation navigation;
     
+    private UT2004AStar navigationAS;
+    
+    private int indexNavAS;
+    
+    List<NavPoint> cheminAS;
+    
+    boolean navigatingToItem=false; 
+    boolean navigating=false; 
+    
     private Alea alea;
     
     private AdvancedLocomotion move;
     
     private long debut=0;
+    
+    private final long tempsStrafe=700;
         
     public BotNavigation(Bot mainBot, MeshInit meshInit)
     {
         this.mainBot = mainBot;
-        
-        navigation = mainBot.getNavigation();
         
         bot = mainBot.getBot();
         tabooItems = new TabooSet<Item>(bot);
@@ -93,7 +103,9 @@ public class BotNavigation {
         
         navPoints = mainBot.getNavPoints();
         nmNav = mainBot.getNmNav();
-        
+        navigation = mainBot.getNavigation();
+        navigationAS= new UT2004AStar(bot);
+        indexNavAS=0;
         nmNav.getPathExecutor().addStuckDetector(stuckDetector);
         alea = new Alea();
         //this.meshInit = meshInit;
@@ -199,32 +211,31 @@ public class BotNavigation {
 	}
 
     
-    public boolean reachable(Item item)
-    {
+    /*public boolean reachable(Item item)
+    { 
         Location botLoc = bot.getLocation();
         Location itemLoc = item.getLocation();
-        
-        
-        List<ILocated> chemin = nmNav.getPathPlanner().computePath(botLoc, itemLoc).get();
-        if (chemin == null)
-        {
-            tabooItems.add(item);
-            return false;
+        System.out.println("BUGGGGG");
+        if(botLoc!=null && itemLoc != null){
+            List<ILocated> chemin = navigation.getPathPlanner().computePath(navigation.getNearestNavPoint(botLoc), navigation.getNearestNavPoint(itemLoc)).get();
+            if (chemin == null)
+            {
+                tabooItems.add(item);
+                return false;
+            }
+            else
+            {   
+                return true;
+            }
         }
-        else
-        {   
-            return true;
-        }
-    }
+        return false;
+    }*/
     
     public boolean reachable(ILocated item)
     {
         Location botLoc = bot.getLocation();
         Location itemLoc = item.getLocation();
-
-
-        List<ILocated> chemin = nmNav.getPathPlanner().computePath(botLoc, itemLoc).get();
-
+        List<ILocated> chemin = navigation.getPathPlanner().computePath(navigation.getNearestNavPoint(botLoc), navigation.getNearestNavPoint(itemLoc)).get();
         if (chemin == null)
         {
             return false;
@@ -233,34 +244,99 @@ public class BotNavigation {
         {   
             return true;
         }
-
-}
+        
+    }
+    
+    
+    public boolean isNavigatingToItem(){
+        return navigatingToItem;
+    }
+    
+    public boolean isNavigating(){
+        return navigating;
+    }
+    
+    public void mouvement(List<NavPoint> chemin){
+        if(System.currentTimeMillis()-debut>tempsStrafe){
+            move.moveContinuos();
+            mouvementAleatoire();
+            debut = System.currentTimeMillis();
+        }
+        else{
+            move.moveTo(cheminAS.get(indexNavAS));
+        }
+    }
     
     public boolean navigate() {
+        if(isNavigating()){
+            if(navPoints.getNearestNavPoint().equals(cheminAS.get(indexNavAS))){
+                if(cheminAS.size()-1==indexNavAS){
+                    if(100<info.getDistance(cheminAS.get(indexNavAS))){
+                        System.out.println("je suis a plus de 10cm de mon objectif : " + cheminAS.get(indexNavAS).getId().getStringId());
+                        mouvement(cheminAS);
+                    }
+                    else{
+                        navigatingToItem=false;
+                        navigating=false;
+                    }
+                }
+                else{
+                    indexNavAS++;
+                    mouvement(cheminAS);
+                    
+                }
+            }
+            else{
+                mouvement(cheminAS);
+            }
+        }
+        else{
+            Location botLoc = bot.getLocation();
+            cheminAS = navigationAS.computePath(navigation.getNearestNavPoint(botLoc), navPoints.getRandomNavPoint()).get();
+             if(cheminAS!=null){
+                indexNavAS=0;
+                mouvement(cheminAS);
+                navigatingToItem=false;
+                navigating=true;
+            }
+            
+        }
+        return true;
+            
+    }
+    
+    
+    
+    public boolean navigate(ILocated item){
+        if(isNavigatingToItem()){
+            navigate();
+        }
+        else{
+            Location botLoc = bot.getLocation();
+            Location itemLoc = item.getLocation();
+            cheminAS = navigationAS.computePath(navigation.getNearestNavPoint(botLoc), navigation.getNearestNavPoint(itemLoc)).get();
+            if(cheminAS!=null){
+                indexNavAS=0;
+                mouvement(cheminAS);
+                navigatingToItem=true;
+                navigating=true;
+            }
+        }
+        /*if (navigation.isNavigating()) return false;
         
-        if (navigation.isNavigating())
-            return false;
-        
-        NavPoint np = navPoints.getRandomNavPoint();
-        
-        navigation.navigate(np);
-    	
+        if(reachable(item)){
+            navigation.navigate(item);
+        }       */
     	return false;
     }
     
-    public boolean navigate(ILocated item) {
-
+    /*public boolean navigate(Item item) {
+        
         if (navigation.isNavigating()) return false;
-        navigation.navigate(item);
-               
-    	return false;
-    }
-    
-    public boolean navigate(Item item) {
-        
-         if (navigation.isNavigating()) return false;
          
-        navigation.navigate(item);
+        if(reachable(item)){
+            navigation.navigate(item);
+        }
         
     	return false;
     }
@@ -269,26 +345,74 @@ public class BotNavigation {
 
     if (navigation.isNavigating()) return false;
     
-    navigation.navigate(item);
+    if(reachable(item)){
+        navigation.navigate(item);
+    }
 
     return false;
-}
-        
-        
+}*/
+   boolean dansA=false;
+    public void handleLift(List<ILocated> chemin, boolean b){
+        int index = navigation.getPathExecutor().getPathElementIndex();
+        if(index>0){
+            double distanceZ=chemin.get(index).getLocation().getDistanceZ(chemin.get(index-1).getLocation());
+            System.out.println("DistanceZ : " + distanceZ);
+            
+            if(b && distanceZ>300){
+                dansA=true;
+            }
+            else{
+                if(dansA=true){
+                    if(index+1<chemin.size()){
+                        move.dodgeTo(chemin.get(index+1), false);
+                    }
+                    dansA=false;
+                }
+            }
+        }
+    }
+    public void handleStuck(){
+        move.jump(0.4);
+        return;
+    }
+    
     public void mouvementAleatoire(){
-    if(navigation.isNavigating()){
-            double distanceStrafe = Math.random()*50+200;
-            if(700<System.currentTimeMillis()-debut){
-                debut = System.currentTimeMillis();
-                if(alea.pourcentDeChance(100.0)){
-                    if(alea.uneChanceSur(2)){
-                        move.strafeRight(distanceStrafe);
+        if(isNavigating()){
+            /*if(stuckDetector.isStuck()){
+                handleStuck();
+            }
+            else{
+                List<ILocated> chemin = navigation.getPathExecutor().getPath();
+                int index = navigation.getPathExecutor().getPathElementIndex();
+                if(index>=0 && index+1<chemin.size()){
+                    NavPoint currentNP = navigation.getNearestNavPoint(chemin.get(index));
+                    NavPoint nextNP = navigation.getNearestNavPoint(chemin.get(index+1));
+                    if(currentNP.isLiftCenter() || currentNP.isJumpSpot() || currentNP.isInvSpot() || nextNP.isLiftCenter()){
+                         
+                        if(currentNP.isLiftCenter() || nextNP.isLiftCenter()){
+                            System.out.println("-------------- lift ---------");
+                            handleLift(chemin, nextNP.isLiftCenter()); 
+                        }
+                        else{
+                            System.out.println("-------------- jump --------");
+                        }
                     }
                     else{
-                        move.strafeLeft(distanceStrafe);
-                    }
-                }
-           }
+                        dansA=false;*/
+                        double distanceStrafe = 100;
+                            
+                            if(/*700<System.currentTimeMillis()-debut &&*/ alea.pourcentDeChance(100.0)){
+                                debut = System.currentTimeMillis();
+                                if(alea.uneChanceSur(2)){
+                                    move.strafeRight(distanceStrafe);
+                                }
+                                else{
+                                    move.strafeLeft(distanceStrafe);
+                                }
+                            }
+                    
+                
+            
         }
     }
     

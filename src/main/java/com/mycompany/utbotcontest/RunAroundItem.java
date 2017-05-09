@@ -4,6 +4,7 @@ import static com.mycompany.utbotcontest.ProbabilitesArmes.inventaireArmes;
 import static com.mycompany.utbotcontest.ProbabilitesArmes.referencesArmes;
 import cz.cuni.amis.pogamut.base.utils.logging.LogCategory;
 import cz.cuni.amis.pogamut.base.utils.math.DistanceUtils;
+import cz.cuni.amis.pogamut.unreal.communication.messages.UnrealId;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weaponry;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.AgentInfo;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Game;
@@ -19,9 +20,11 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.UT2004ItemType;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Item;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.GameInfo;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.GameInfo.GameInfoUpdate;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.NavPointNeighbourLink;
 import cz.cuni.amis.pogamut.ut2004.utils.UnrealUtils;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -468,16 +471,18 @@ protected List<Item> itemsToRunAround = null;
     protected void stateRunAroundItems() {
         //log.info("Decision is: ITEMS");
         //config.setName("Hunter [ITEMS]");
-        if (mainBot.getNavigation().isNavigatingToItem() && navBot.getItem() != null)
+        if (navBot.isNavigatingToItem() && navBot.getItem() != null)
         {
             bot.getBotName().setInfo("ITEM: " + navBot.getItem().getType().getName() + "");
+            navBot.navigate();
         }
         else
         {
             bot.getBotName().setInfo("RUN AROUND ITEM");
+            navBot.navigate();
         }
        
-        if (mainBot.getNavigation().isNavigatingToItem()) return;
+        if (navBot.isNavigatingToItem()) return;
         
         List<Item> interesting = new ArrayList<Item>();
         
@@ -548,10 +553,14 @@ protected List<Item> itemsToRunAround = null;
         	bot.getBotName().setInfo("RANDOM NAV");
                 navBot.navigate();
         } else {
-        	navBot.setItem(item);
-        	log.info("RUNNING FOR: " + item.getType().getName());
-        	bot.getBotName().setInfo("ITEM: " + item.getType().getName() + "");
-                navBot.navigate(item);
+            /*for(Map.Entry<UnrealId, NavPointNeighbourLink> entry : item.getNavPoint().getIncomingEdges().entrySet()){
+                //navBuilder.modifyNavPoint(entry.getValue().getFromNavPoint().getId().getStringId()).removeEdgeTo("DM-1on1-Irondust.PathNode28");
+                mainBot.getNavBuilder().removeEdge(item.getNavPointId().getStringId(),entry.getValue().getFromNavPoint().getId().getStringId());
+            }*/
+            navBot.setItem(item);
+            log.info("RUNNING FOR: " + item.getType().getName());
+            bot.getBotName().setInfo("ITEM: " + item.getType().getName() + "");
+            navBot.navigate(item);
         }        
     }
 
