@@ -257,8 +257,8 @@ public class BotNavigation {
     }
     
     public void mouvement(List<NavPoint> chemin){
+        //if(cheminAS.get(indexNavAS).isJumpDest())
         if(System.currentTimeMillis()-debut>tempsStrafe){
-            move.moveContinuos();
             mouvementAleatoire();
             debut = System.currentTimeMillis();
         }
