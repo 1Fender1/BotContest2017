@@ -128,7 +128,7 @@ public class BotNavigation {
                 }
             }catch(NullPointerException npe)
             {
-                System.out.println("Erreur sur la navigation");
+                //System.out.println("Erreur sur la navigation");
             }
         }
     }

@@ -531,11 +531,6 @@ protected List<Item> itemsToRunAround = null;
             listHealth.clear(); listWeapon.clear(); listArmor.clear(); listAmmo.clear();
             navBot.setItem(item);
        }
-       else
-       {
-           System.out.println("Je vais chercher l'item le plus proche !");
-       }
-       
        
        min = 0; damage = null; /*indice = 0;
        for(int i =0; i<5; i++){
