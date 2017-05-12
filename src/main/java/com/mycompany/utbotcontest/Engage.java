@@ -111,43 +111,41 @@ public class Engage {
         } else {
             // 2) or shoot on enemy if it is visible
             distance = info.getLocation().getDistance(enemy.getLocation());
-            if (mainBot.getShoot().shoot(weaponPrefs, enemy) != null) {
-                log.info("Shooting at enemy!!!");
-                shooting = true;
-                int movement = random.nextInt(3);
-                
-                //0 -> strafeLeft
-                //1 -> strafeRight
-                //2 -> jump
-                switch(movement){
-                    case 0: if(mainBot.getLeft90()) 
-                                mainBot.getMove().strafeRight(longueurStrafe,enemy.getLocation());
-                            else
-                                mainBot.getMove().strafeLeft(longueurStrafe,enemy.getLocation());
-                            break;
-                    case 1: if(mainBot.getRight90())
-                                mainBot.getMove().strafeLeft(longueurStrafe,enemy.getLocation());
-                            else
-                                mainBot.getMove().strafeRight(longueurStrafe,enemy.getLocation());
-                            break;
-                    case 2: int randX = (random.nextInt()%250) + 25;
-                            int randY = (random.nextInt()%250) + 25;
-                            boolean signeX = random.nextBoolean();
-                            boolean signeY = random.nextBoolean();
-                            Location loc = info.getLocation();
-                            if(signeX)
-                                loc.setX((double)randX);
-                            else
-                                loc.setX((double)-randX);
-                            if(signeY)
-                                loc.setY((double)randY);
-                            else
-                                loc.setY((double)-randY);
-                            mainBot.getMove().moveTo(loc);
-                            mainBot.getMove().jump();
-                            break;
-                    default: break;
-                }
+            mainBot.getShoot().shoot(enemy);
+            log.info("Shooting at enemy!!!");
+            shooting = true;
+            int movement = random.nextInt(3);
+            //0 -> strafeLeft
+            //1 -> strafeRight
+            //2 -> jump
+            switch(movement){
+                case 0: if(mainBot.getLeft90()) 
+                            mainBot.getMove().strafeRight(longueurStrafe,enemy.getLocation());
+                        else
+                            mainBot.getMove().strafeLeft(longueurStrafe,enemy.getLocation());
+                        break;
+                case 1: if(mainBot.getRight90())
+                            mainBot.getMove().strafeLeft(longueurStrafe,enemy.getLocation());
+                        else
+                            mainBot.getMove().strafeRight(longueurStrafe,enemy.getLocation());
+                        break;
+                case 2: int randX = (random.nextInt()%250) + 25;
+                        int randY = (random.nextInt()%250) + 25;
+                        boolean signeX = random.nextBoolean();
+                        boolean signeY = random.nextBoolean();
+                        Location loc = info.getLocation();
+                        if(signeX)
+                            loc.setX((double)randX);
+                        else
+                            loc.setX((double)-randX);
+                        if(signeY)
+                            loc.setY((double)randY);
+                        else
+                            loc.setY((double)-randY);
+                        mainBot.getMove().moveTo(loc);
+                        mainBot.getMove().jump();
+                        break;
+                default: break;
             }
         }
 
@@ -155,8 +153,10 @@ public class Engage {
         int decentDistance = Math.round(random.nextFloat() * 800) + 200;
         if (!enemy.isVisible() || !shooting || decentDistance < distance) {
             if (!runningToPlayer) {
-                navBot.navigate(enemy);
-                runningToPlayer = true;
+                if (distance > 1500) {
+                    navBot.navigate(enemy);
+                    runningToPlayer = true;
+                }                
             }
         } else {
             runningToPlayer = false;

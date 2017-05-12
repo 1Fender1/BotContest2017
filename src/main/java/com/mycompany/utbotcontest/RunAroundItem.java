@@ -230,12 +230,12 @@ public class RunAroundItem {
               d++;
             }
         }
-        System.out.println("Armes:   "+w);
+        /*System.out.println("Armes:   "+w);
         System.out.println("Vie:   "+h);
         System.out.println("armure:   "+a);
         System.out.println("munition:   "+am);
         System.out.println("adrenaline:   "+ad);
-        System.out.println("damage:   "+d);
+        System.out.println("damage:   "+d); */
       }
       
       ////////////////////////
@@ -398,7 +398,7 @@ public class RunAroundItem {
         //2 Armors
         //3 Ammos
         //4 UDammage
-        System.out.println("+++++++TypeItem : "+ typeItem + "+++++++++++");
+        //System.out.println("+++++++TypeItem : "+ typeItem + "+++++++++++");
         
         switch (typeItem)
         {

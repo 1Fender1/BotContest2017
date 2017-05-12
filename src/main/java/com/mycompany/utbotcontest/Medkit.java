@@ -96,47 +96,4 @@ public class Medkit {
         	navBot.setItem(item);
         }
     }
-    
-    protected void stateRepli() {
-        List<Item> listeHealth = new ArrayList<Item>();
-        Item it = null;
-        for (Iterator i = items.getAllItems(ItemType.Category.HEALTH).entrySet().iterator(); i.hasNext();) {
-            Map.Entry couple = (Map.Entry)i.next();
-            it = (Item) couple.getValue();
-            listeHealth.add(it);
-        }
-        //weaponry.changeWeapon(UT2004ItemType.SHIELD_GUN);
-    }
-    
-    protected void stateFuite() {
-        Item hp = null;
-        Item armor = null;
-        double distanceH;
-        double distanceA;
-        bot.getBotName().setInfo("FUITE");
-        hp = items.getNearestSpawnedItem(ItemType.Category.HEALTH);
-        armor = items.getNearestSpawnedItem(ItemType.Category.ARMOR);
-        if (armor == null) {
-            navBot.navigate(hp);
-            navBot.setItem(hp);
-        }
-        else {
-            distanceH = info.getLocation().getDistance(hp.getLocation());
-            distanceA = info.getLocation().getDistance(armor.getLocation());
-            if (distanceA < distanceH && info.getArmor() <= 150 && hp != null) {
-                if (info.getArmor() >= 50 && armor.getAmount() == 50) {
-                    armor = items.getNearestSpawnedItem(UT2004ItemType.SUPER_SHIELD_PACK);
-                }
-                navBot.navigate(armor);
-                navBot.setItem(armor);
-            }
-            else {
-                navBot.navigate(hp);
-                navBot.setItem(hp);
-            }
-        }
-        mainBot.setEngage(true);
-        mainBot.setPursue(true);
-    }
-    
 }

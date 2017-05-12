@@ -14,6 +14,7 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.PlayerD
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.PlayerKilled;
 import cz.cuni.amis.pogamut.base.utils.guice.AgentScoped;
 import cz.cuni.amis.pogamut.base.utils.logging.LogCategory;
+import cz.cuni.amis.pogamut.base3d.worldview.object.Rotation;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weapon;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weaponry;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.AgentInfo;
@@ -34,10 +35,12 @@ import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004BotModuleController;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Configuration;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Initialize;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.RemoveRay;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Rotate;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.StopShooting;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.AutoTraceRay;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.ConfigChange;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.GameInfo;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.HearNoise;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.InitedMessage;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Self;
 import cz.cuni.amis.pogamut.ut2004.utils.UnrealUtils;
@@ -99,6 +102,8 @@ public class Bot extends UT2004BotModuleController {
     
     private Evasion evasion;
     
+    private Comportement comportement;
+    
     //private MeshInit meshInit;
     private ProbabilitesArmes probaA;
     
@@ -108,6 +113,12 @@ public class Bot extends UT2004BotModuleController {
     
     //Probabilite
     public String lastWeaponUsed = "AssaultRifle";
+    public Player lastEnemy = null;
+    public double distanceBotTarget = 0;
+    
+    protected Weapon wp = null;
+        
+    protected boolean killed = true;
     
     //RAYCASTING
     protected static final String FRONT = "frontRay";
@@ -140,24 +151,13 @@ public class Bot extends UT2004BotModuleController {
     @Override
     public void botInitialized(GameInfo info, ConfigChange currentConfig, InitedMessage init) {
         body.getConfigureCommands().setBotAppearance("HumanMaleA.EgyptMaleA");
-        getInitializeCommand().setDesiredSkill(5);
+        getInitializeCommand().setDesiredSkill(4);
     }
     
     @Override
     public void prepareBot(UT2004Bot bot) {
 
         autoFixer = new UT2004PathAutoFixer(bot, navigation.getPathExecutor(), fwMap, aStar, navBuilder); // auto-removes wrong navigation links between navpoints
-        
-        // DEFINE WEAPON PREFERENCES
-        weaponPrefs.addGeneralPref(UT2004ItemType.ROCKET_LAUNCHER, true);
-        weaponPrefs.addGeneralPref(UT2004ItemType.FLAK_CANNON, true);
-        weaponPrefs.addGeneralPref(UT2004ItemType.LIGHTNING_GUN, true);                
-        weaponPrefs.addGeneralPref(UT2004ItemType.MINIGUN, false);        
-        weaponPrefs.addGeneralPref(UT2004ItemType.ASSAULT_RIFLE, true);
-        weaponPrefs.addGeneralPref(UT2004ItemType.SHOCK_RIFLE, true);
-        weaponPrefs.addGeneralPref(UT2004ItemType.BIO_RIFLE, true);
-        weaponPrefs.addGeneralPref(UT2004ItemType.LINK_GUN, true);
-        weaponPrefs.addGeneralPref(UT2004ItemType.SHIELD_GUN, false);
     }
 
     //@return
@@ -167,9 +167,7 @@ public class Bot extends UT2004BotModuleController {
     	// skill level affects how well will the bot aim
         return new Initialize().setName("T80" + (instanceCount++)).setDesiredSkill(5);
     }
-    
-    
-    
+      
         @Override
     public void botFirstSpawn(GameInfo gameInfo, ConfigChange config, InitedMessage init, Self self) {
 
@@ -185,8 +183,10 @@ public class Bot extends UT2004BotModuleController {
         evasion = new Evasion(this, navBot);
         VisibilityMatrix visibilityMatrix = new VisibilityMatrix(game.getMapName(), 10000);
         visibilityMatrix.load(new File("./"), game.getMapName());
-        
-        probaA = new ProbabilitesArmes(UT2004ItemType.ASSAULT_RIFLE, 0.5, 0.5, 0, 0);
+        comportement = new Comportement(this);
+        comportement.setNomComportement(comportement.agressif);
+        probaA = new ProbabilitesArmes(UT2004ItemType.ASSAULT_RIFLE, 0.5, 5, 0, 0, 0, 500);
+        probaA.setMainBot(this);
         probaA.initProbabilitesA();
         final int rayLength = (int) (UnrealUtils.CHARACTER_COLLISION_RADIUS * 5);
         // settings for the rays
@@ -221,8 +221,17 @@ public class Bot extends UT2004BotModuleController {
     public void playerKilled(PlayerKilled event) {
         if (event.getKiller().equals(info.getId())) {
             ++frags;
+            if (lastEnemy != null) {
+                distanceBotTarget = Math.abs(info.getLocation().getDistance2D(lastEnemy.getLocation()));
+            }
             probaA.nbVIncrement(lastWeaponUsed);
             probaA.updateProba(lastWeaponUsed);
+            if (comportement.getNomComportement().equals("Agressif")) {
+                comportement.updateProbaAgressif(killed);
+            }
+            else {
+                comportement.updateProbaAgressif(killed);
+            }
         }
         if (enemy == null) {
             return;
@@ -230,10 +239,11 @@ public class Bot extends UT2004BotModuleController {
         if (enemy.getId().equals(event.getId())) {
             enemy = null;
         }
-    }   
+    }  
     
     public void reset() {
-        probaA.inventaireArmes.clear();
+        comportement.setEnemyCount(0);
+        comportement.listEnemy.clear();
     	navBot.setItem(null);
         enemy = null;
         move.stopMovement();
@@ -247,93 +257,118 @@ public class Bot extends UT2004BotModuleController {
     
     @EventListener(eventClass=BotDamaged.class)
     public void botDamaged(BotDamaged event) {
-    	log.info("I have just been hurt by other bot for: " + event.getDamageType() + "[" + event.getDamage() + "]");
+    	log.info("I have just been hurt by " + event.getInstigator() + " for: " + event.getDamageType() + "[" + event.getDamage() + "]");
     }
     
+    /*@EventListener (eventClass = HearNoise.class)
+    protected void hearNoise (HearNoise event) {
+        if (senses.getNoiseType().contains("XWeapons.")) {
+            move.turnHorizontal(UnrealUtils.degreeToUnrealDegrees(event.getRotation().yaw));
+            if (players.canSeeEnemies()) {
+                setEnemy(info.getNearestVisiblePlayer());
+            }
+            else {
+                if (comportement.isAgressif()) {
+                    navBot.navigate(event.getRotation().toLocation());
+                }
+            }
+        }
+    }*/
 
-    protected Weapon wp = null;
-    
     @Override
     public void logic() throws PogamutException {
         Alea pourcentChangeArme = new Alea();
+        Alea pourcentChangeComportement = new Alea();
         navBot.botFocus();
-        //navBot.mouvementAleatoire();
-         if (!raycasting.getAllRaysInitialized().getFlag()) {
+        navBot.mouvementAleatoire();
+        if (!raycasting.getAllRaysInitialized().getFlag()) {
             return;
         }
         sensorFront = front.isResult();
         sensorLeft90 = left.isResult();
         sensorRight90 = right.isResult();
-        sensor = sensorFront || sensorLeft90 || sensorRight90;
         if (!weaponry.getCurrentWeapon().getGroup().getName().equals(lastWeaponUsed)) {
             lastWeaponUsed = weaponry.getCurrentWeapon().getGroup().getName();
         }
-        if (pourcentChangeArme.pourcentDeChance(30) && weaponry.getWeapons().size() > 2 && (info.isShooting() || info.isSecondaryShooting())) {
+        if (pourcentChangeArme.pourcentDeChance(30) && weaponry.getWeapons().size() > 2 && (!info.isShooting() || !info.isSecondaryShooting())) {
             weaponry.changeWeapon(probaA.choixArme(weaponry));
         }
-        
         if (players.canSeeEnemies())
         {
             enemy = players.getNearestVisibleEnemy();
+            lastEnemy = enemy;
         }
+        comportement.changeComportement(); 
         
-        if (souldEscape && enemy != null && players.canSeeEnemies() && info.getHealth() < 75)
+        //
+        if (souldEscape && enemy != null && info.isFacing(enemy, 45) && info.getHealth() < 75)
         {
             evasion.itemEvasion();
             return;
         }
         
-        // mark that another logic iteration has began
-        if (shouldEngage && enemy != null && players.canSeeEnemies() && info.isFacing(enemy, 45) && weaponry.hasLoadedWeapon()) {
+        // 1) do you see enemy? 	-> go to PURSUE (start shooting / hunt the enemy)
+        if (shouldEngage && enemy != null && info.isFacing(enemy, 45) && weaponry.hasLoadedWeapon()) {
             enemy = engage.stateEngage();
             return;
         }
-
+        
         // 2) are you shooting? 	-> stop shooting, you've lost your target
         if (info.isShooting() || info.isSecondaryShooting()) {
             getAct().act(new StopShooting());
         }
-
+        
         // 3) are you being shot? 	-> go to HIT (turn around - try to find your enemy)
         if (senses.isBeingDamaged()) {
             hit.stateHit();
             return;
         }
         
-
         //System.out.println("==========enemy " + enemy + " ===================");
         // 4) have you got enemy to pursue? -> go to the last position of enemy
-        if (enemy != null && shouldPursue && weaponry.hasLoadedWeapon() && !evasion.isEvading()) {  // !enemy.isVisible() because of 2)
+        if (enemy != null && shouldPursue && weaponry.hasLoadedWeapon()) {  // !enemy.isVisible() because of 2)
             pursue.statePursue();
             return;
         }
         
         // 5) are you hurt?			-> get yourself some medKit
         if (shouldCollectHealth && info.getHealth() < healthLevel) {
-                if (info.getArmor() == 0 && info.getHealth() <= 50) {
-                    shouldPursue = false;
-                    shouldEngage = false;
-                    medkit.stateFuite();
-                }
                 medkit.stateMedKit();
             return;
         }
-
+        
         // 6) if nothing ... run around items
         stateRunAround.stateRunAroundItems();
     }
     
-    
-    
     @Override
     public void botKilled(BotKilled event) {
+        if (lastEnemy != null) {
+            distanceBotTarget = Math.abs(info.getLocation().getDistance2D(lastEnemy.getLocation()));
+        }
         probaA.nbDIncrement(lastWeaponUsed);
         probaA.updateProba(lastWeaponUsed);
         probaA.inventaireArmes.clear();
         probaA.setSize(0);
+        if (comportement.getNomComportement().equals("Agressif")) {
+            comportement.updateProbaAgressif(!killed);
+        }
+        else {
+            comportement.updateProbaAgressif(!killed);
+        }
+        comportement.setEnemyCount(0);     
     	reset();
     }
 
+    public boolean isRunningToPlayer() {
+        return runningToPlayer;
+    }
+
+    public boolean isNavigate() {
+        return navigate;
+    }
+
+    //GETTER
     public NavMeshNavigation getNmNav() {
         return nmNav;
     }
@@ -395,15 +430,23 @@ public class Bot extends UT2004BotModuleController {
     public Players getPlayers() {
         return players;
     }
-
-    public boolean isRunningToPlayer() {
-        return runningToPlayer;
+    
+    public Player getLastEnemy() {
+        return lastEnemy;
     }
-
-    public void setPursueCount(int pursueCount) {
-        this.pursueCount = pursueCount;
+    
+    public double getDistanceBotTarget() {
+        return distanceBotTarget;
     }
-
+    
+    public boolean getLeft90() {
+        return left.isResult();
+    }
+    
+    public boolean getRight90() {
+        return right.isResult();
+    }
+    
     public int getPursueCount() {
         return pursueCount;
     }
@@ -432,10 +475,16 @@ public class Bot extends UT2004BotModuleController {
         return pursue;
     }
     
-    public boolean isNavigate() {
-        return navigate;
+    public Visibility getVisibility()
+    {
+        return visibility;
     }
-
+    
+    //SETTERS
+    public void setPursueCount(int pursueCount) {
+        this.pursueCount = pursueCount;
+    }
+    
     public void setNavigate(boolean navigate) {
         this.navigate = navigate;
     }
@@ -443,31 +492,21 @@ public class Bot extends UT2004BotModuleController {
     public void setEnemy(Player enemy) {
         this.enemy = enemy;
     }
-    
-    public boolean getLeft90() {
-        return left.isResult();
-    }
-    
-    public boolean getRight90() {
-        return right.isResult();
-    }
-    
-    public void setPursue(Boolean etat) {
+
+    public void setPursue(boolean etat) {
         this.shouldPursue = etat;
     }
     
-    public void setEngage(Boolean etat) {
+    public void setEngage(boolean etat) {
         this.shouldEngage = etat;
     }
     
-    public void setMedkit(Boolean etat) {
+    public void setMedkit(boolean etat) {
         this.shouldCollectHealth = etat;
-    }    
+    }  
     
-    @Override
-    public Visibility getVisibility()
-    {
-        return visibility;
+    public void setEvasion(boolean etat) {
+        this.souldEscape = etat;
     }
     
 }

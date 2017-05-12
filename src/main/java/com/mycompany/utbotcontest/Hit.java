@@ -96,28 +96,6 @@ public class Hit {
                     this.enemy = mainBot.getPlayers().getNearestVisibleEnemy();
                     mainBot.setEnemy(enemy);
                     move.turnTo(enemy);
-                    if (enemy.getFiring() == 0 && info.isFacing(enemy.getLocation(), 180)) {
-                        if (mainBot.getRight90()) {
-                            move.strafeLeft(200, enemy.getId());
-                            //move.jump();
-                        }
-                        if (mainBot.getLeft90()) {
-                            move.strafeRight(200, enemy.getId());
-                            //move.jump();
-                        }
-                        if (!mainBot.getLeft90() && !mainBot.getRight90()) {
-                            Random randVal = new Random();
-                            int nbVal = randVal.nextInt();
-                            if (nbVal % 2 == 0) {
-                                move.strafeLeft(200, enemy.getId());
-                                //move.jump();
-                            }
-                            else {
-                                move.strafeRight(200, enemy.getId());
-                                //move.jump();
-                            }
-                        }
-                    }
                 }
                 else {
                     return; 
