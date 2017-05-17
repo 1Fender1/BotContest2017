@@ -13,6 +13,7 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.UT2004ItemType;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Item;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Player;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -84,7 +85,7 @@ public class Medkit {
     }
     
 
-    protected void stateMedKit() {
+    protected void stateMedKit() throws IOException {
         //log.info("Decision is: MEDKIT");
         Item item = items.getPathNearestSpawnedItem(ItemType.Category.HEALTH);
         if (item == null) {

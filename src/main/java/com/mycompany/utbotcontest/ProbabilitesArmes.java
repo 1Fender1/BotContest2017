@@ -22,6 +22,7 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.UT2004ItemType;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Item;
 import cz.cuni.amis.pogamut.ut2004.communication.translator.itemdescriptor.WeaponDescriptor;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -45,6 +46,7 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
     private int firingMode;
     private double distanceInf;
     private double distanceSup;
+    private WeaponMemory memory = new WeaponMemory();
     
     public ProbabilitesArmes(UT2004ItemType nom, double proba, double poids, int nbV, int nbD, double dI, double dS) {
         this.nom = nom;
@@ -64,16 +66,16 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
     private int sizeInventaire = 0;
     
     //INITIALISATION DES PROBABILITES SELON LES ARMES
-    public void initProbabilitesA() {
-        ProbabilitesArmes rocket = new ProbabilitesArmes(UT2004ItemType.ROCKET_LAUNCHER, 0.7, 1, 0, 0, 500, 3000);
-        ProbabilitesArmes flak = new ProbabilitesArmes(UT2004ItemType.FLAK_CANNON, 0.7, 2, 0, 0, 50, 1800);
-        ProbabilitesArmes lightning = new ProbabilitesArmes(UT2004ItemType.LIGHTNING_GUN, 0.7, 2, 0, 0, 700, 4000);
-        ProbabilitesArmes minigun = new ProbabilitesArmes(UT2004ItemType.MINIGUN, 0.6, 3, 0, 0, 50, 1800);
-        ProbabilitesArmes link = new ProbabilitesArmes(UT2004ItemType.LINK_GUN, 0.6, 4, 0, 0, 500, 2000);
-        ProbabilitesArmes assault = new ProbabilitesArmes(UT2004ItemType.ASSAULT_RIFLE, 0.5, 5, 0, 0, 0, 600);
-        ProbabilitesArmes shock = new ProbabilitesArmes(UT2004ItemType.SHOCK_RIFLE, 0.4, 5, 0, 0, 1000, 4000);
-        ProbabilitesArmes bio = new ProbabilitesArmes(UT2004ItemType.BIO_RIFLE, 0.4, max_value, 0, 0, 50, 1500);
-        ProbabilitesArmes shield = new ProbabilitesArmes(UT2004ItemType.SHIELD_GUN, 0,max_value, 0, 0, 0, 0);
+    public void initProbabilitesA() throws IOException {
+        ProbabilitesArmes rocket = memory.getProba(UT2004ItemType.ROCKET_LAUNCHER.toString());
+        ProbabilitesArmes flak = memory.getProba(UT2004ItemType.FLAK_CANNON.toString());
+        ProbabilitesArmes lightning = memory.getProba(UT2004ItemType.LIGHTNING_GUN.toString());
+        ProbabilitesArmes minigun = memory.getProba(UT2004ItemType.MINIGUN.toString());
+        ProbabilitesArmes link = memory.getProba(UT2004ItemType.LINK_GUN.toString());
+        ProbabilitesArmes assault = memory.getProba(UT2004ItemType.ASSAULT_RIFLE.toString());
+        ProbabilitesArmes shock = memory.getProba(UT2004ItemType.SHOCK_RIFLE.toString());
+        ProbabilitesArmes bio = memory.getProba(UT2004ItemType.BIO_RIFLE.toString());
+        ProbabilitesArmes shield = memory.getProba(UT2004ItemType.SHIELD_GUN.toString());
         referencesArmes.add(rocket);
         referencesArmes.add(flak);
         referencesArmes.add(lightning);
@@ -94,13 +96,17 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
         return info;
     }
     
+    public String toStringForMemory() {
+        return nom + ";" + probabilite+ ";" + poids + ";" + nbVictoire + ";" + nbDefaite + ";" + distanceInf + ";" + distanceSup;
+    }
+    
     @Override
     public int compareTo(ProbabilitesArmes o) {
         return new Double(probabilite).compareTo(o.probabilite);
     }
     
     //INCREMENTE LE NOMBRE DE VICTOIRE DE L'ARME
-    protected void nbVIncrement(String weapon) {
+    protected void nbVIncrement(String weapon) throws IOException {
         int index = 0;
         Iterator<ProbabilitesArmes> it = referencesArmes.iterator();
         while (it.hasNext() && !it.next().nom.getGroup().getName().equals(weapon)) {
@@ -109,10 +115,11 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
         ProbabilitesArmes update = referencesArmes.get(index);
         update.nbVictoire++;
         referencesArmes.set(index, update);
+        memory.addInfo(update.getNom().toString(), update.toStringForMemory());
     }
     
     //INCREMENTE LE NOMBRE DE DEFAITE DE L'ARME
-    protected void nbDIncrement(String weapon) {
+    protected void nbDIncrement(String weapon) throws IOException {
         int index = 0;
         Iterator<ProbabilitesArmes> it = referencesArmes.iterator();
         while (it.hasNext() && !it.next().nom.getGroup().getName().equals(weapon)) {
@@ -121,6 +128,7 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
         ProbabilitesArmes update = referencesArmes.get(index);
         update.nbDefaite++;
         referencesArmes.set(index, update);
+        memory.addInfo(update.getNom().toString(), update.toStringForMemory());
     }
     
     //AFFICHAGE DE L'INVENTAIRE DU BOT
@@ -188,7 +196,7 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
     }
     
     //MAJ PROBABILITE DE L'ARME
-    protected void updateProba(String weapon) {
+    protected void updateProba(String weapon) throws IOException {
         ProbabilitesArmes pa;
         double variation = 0;
         int index = 0;
@@ -215,6 +223,7 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
         else {
             referencesArmes.get(index).probabilite = (referencesArmes.get(index).probabilite * referencesArmes.get(index).poids + referencesArmes.get(index).nbVictoire) / (referencesArmes.get(index).poids + referencesArmes.get(index).nbVictoire + referencesArmes.get(index).nbDefaite);
         }
+        memory.addInfo(referencesArmes.get(index).getNom().toString(), referencesArmes.get(index).toStringForMemory());
     }
     
     //DIFFERENCE ENTRE LA DISTANCE ET LA BORNE

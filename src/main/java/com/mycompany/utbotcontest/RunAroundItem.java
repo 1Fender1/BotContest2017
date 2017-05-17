@@ -4,6 +4,7 @@ import static com.mycompany.utbotcontest.ProbabilitesArmes.inventaireArmes;
 import static com.mycompany.utbotcontest.ProbabilitesArmes.referencesArmes;
 import cz.cuni.amis.pogamut.base.utils.logging.LogCategory;
 import cz.cuni.amis.pogamut.base.utils.math.DistanceUtils;
+import cz.cuni.amis.pogamut.unreal.communication.messages.UnrealId;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weaponry;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.AgentInfo;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Game;
@@ -20,8 +21,10 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Item;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.GameInfo;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.GameInfo.GameInfoUpdate;
 import cz.cuni.amis.pogamut.ut2004.utils.UnrealUtils;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Random;
 
 /**
@@ -62,7 +65,11 @@ public class RunAroundItem {
     
     private final double tauxProbaArme = 0.5;
     
-    public RunAroundItem(Bot mainBot, BotNavigation navBot)
+    private MapMemory memory = new MapMemory();
+    
+    private List<Item> knowItems;
+    
+    public RunAroundItem(Bot mainBot, BotNavigation navBot) throws IOException
     {
         this.mainBot = mainBot;
         
@@ -87,6 +94,15 @@ public class RunAroundItem {
         this.log = mainBot.getLog();
         
         this.probaA = mainBot.getProbaArmes();
+        
+        this.knowItems = memory.getItems(mainBot.getGame().getMapName(), mainBot.getItems());
+        if (knowItems != null) 
+        {
+            for (Item it : knowItems)
+            {
+                System.out.println(it.toString());
+            }
+        }
     }
     
     
@@ -459,15 +475,56 @@ public class RunAroundItem {
         return null;        
     }
     
-
+    //retire de la liste 1 les éléments non présent dans la liste 2
+    private List<Item> filtrerSupprElem (List<Item> liste1,List<Item> liste2)
+    {
+        List<Item> listeRes = new ArrayList<Item>();
+        for (Item item : liste1)
+        {
+            if (liste2.contains(item))
+            {
+                listeRes.add(item);
+            }
+        }
+        return listeRes;
+    }
+    
+    private void addNewItems() throws IOException
+    {
+        if (knowItems == null)
+        {
+            knowItems = new ArrayList<Item>();
+        }
+        List<Item> visibleItems = new ArrayList<Item>();
+        for (Entry<UnrealId, Item> item : items.getAllItems().entrySet())
+        {
+            if (mainBot.getInfo().isFacing(item.getValue().getLocation(), 45))
+            {
+                visibleItems.add(item.getValue());
+            }
+        }
+        
+        for (Item item : visibleItems)
+        {
+            if (!knowItems.contains(item) && !item.isDropped())
+            {
+                memory.addInfo(mainBot.getGame().getMapName(), item.getId().toString());
+                knowItems.add(item);
+            }
+        }
+    }
+    
     ////////////////////////////
     // STATE RUN AROUND ITEMS //
     ////////////////////////////
 protected List<Item> itemsToRunAround = null;
 
-    protected void stateRunAroundItems() {
+    protected void stateRunAroundItems() throws IOException {
         //log.info("Decision is: ITEMS");
         //config.setName("Hunter [ITEMS]");
+        addNewItems();
+        
+        
         if (mainBot.getNavigation().isNavigatingToItem() && navBot.getItem() != null)
         {
             bot.getBotName().setInfo("ITEM: " + navBot.getItem().getType().getName() + "");

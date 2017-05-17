@@ -1,6 +1,7 @@
 package com.mycompany.utbotcontest;
 
 
+import com.sun.javafx.geom.Edge;
 import cz.cuni.amis.introspection.java.JProp;
 import cz.cuni.amis.pogamut.base.communication.worldview.listener.annotation.EventListener;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.UT2004PathAutoFixer;
@@ -14,17 +15,29 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.PlayerD
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.PlayerKilled;
 import cz.cuni.amis.pogamut.base.utils.guice.AgentScoped;
 import cz.cuni.amis.pogamut.base.utils.logging.LogCategory;
+import cz.cuni.amis.pogamut.base3d.worldview.object.Location;
 import cz.cuni.amis.pogamut.base3d.worldview.object.Rotation;
+import cz.cuni.amis.pogamut.base3d.worldview.object.Velocity;
+import cz.cuni.amis.pogamut.multi.communication.worldview.object.ILocalWorldObject;
+import cz.cuni.amis.pogamut.multi.communication.worldview.object.ISharedWorldObject;
+import cz.cuni.amis.pogamut.multi.communication.worldview.object.IStaticWorldObject;
+import cz.cuni.amis.pogamut.unreal.communication.messages.UnrealId;
+import cz.cuni.amis.pogamut.unreal.communication.worldview.map.Box;
+import cz.cuni.amis.pogamut.unreal.communication.worldview.map.IUnrealMap;
+import cz.cuni.amis.pogamut.unreal.communication.worldview.map.IUnrealMapInfo;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weapon;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weaponry;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.AgentInfo;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Game;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Items;
+import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.MapExport;
+import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.NavigationGraphBuilder;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Players;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.WeaponPrefs;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.visibility.Visibility;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.visibility.model.VisibilityMatrix;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.IUT2004Navigation;
+import cz.cuni.amis.pogamut.ut2004.agent.navigation.UT2004MapTweaks.IMapTweak;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.LevelGeometryModule;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.drawing.UT2004Draw;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.pathfollowing.NavMeshNavigation;
@@ -32,20 +45,37 @@ import cz.cuni.amis.pogamut.ut2004.bot.command.AdvancedLocomotion;
 import cz.cuni.amis.pogamut.ut2004.bot.command.CompleteBotCommandsWrapper;
 import cz.cuni.amis.pogamut.ut2004.bot.command.ImprovedShooting;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004BotModuleController;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Configuration;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Initialize;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.RemoveRay;
-import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Rotate;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.StopShooting;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.AutoTraceRay;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.ConfigChange;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.GameInfo;
-import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.HearNoise;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.InitedMessage;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Item;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.NavPoint;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.NavPointNeighbourLink;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Self;
+import cz.cuni.amis.pogamut.ut2004.communication.worldview.map.UT2004Map;
 import cz.cuni.amis.pogamut.ut2004.utils.UnrealUtils;
 import cz.cuni.amis.utils.exception.PogamutException;
+import java.awt.Color;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Random;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.vecmath.Vector3d;
 
 
@@ -107,6 +137,8 @@ public class Bot extends UT2004BotModuleController {
     //private MeshInit meshInit;
     private ProbabilitesArmes probaA;
     
+    private NavigationMemory memory;
+    
     private Player enemy = null;
     
     private boolean navigate = false;
@@ -142,8 +174,124 @@ public class Bot extends UT2004BotModuleController {
     
     
     
+    private void testDraw()
+    {
+        for (Entry<UnrealId,NavPoint> navP1 : navPoints.getNavPoints().entrySet())
+        {
+            for (Entry<UnrealId, NavPointNeighbourLink> arc : navP1.getValue().getOutgoingEdges().entrySet())
+            {
+                if (fwMap.checkLink(arc.getValue()))
+                {
+                    NavPoint p1 = arc.getValue().getFromNavPoint();
+                    NavPoint p2 = arc.getValue().getToNavPoint();
+                    if ((p1.isLiftCenter() || p1.isLiftExit() || p2.isLiftJumpExit()) && (p2.isLiftCenter() || p2.isLiftExit() || p2.isLiftJumpExit()))
+                    {
+                        draw.drawLine(new Color(21, 96, 189), arc.getValue().getFromNavPoint().getLocation(), arc.getValue().getToNavPoint().getLocation());
+                    }
+                    else if (arc.getValue().isForceDoubleJump())
+                    {
+                        draw.drawLine(new Color(52, 201, 36), arc.getValue().getFromNavPoint().getLocation(), arc.getValue().getToNavPoint().getLocation());
+                    }
+                    else if (p1.isJumpDest() || p2.isJumpDest() || p1.isJumpSpot() || p2.isJumpSpot() || p1.isJumpPad() || p2.isJumpPad())
+                    {
+                        draw.drawLine(new Color(9, 82, 40), arc.getValue().getFromNavPoint().getLocation(), arc.getValue().getToNavPoint().getLocation());
+                    }
+                    else
+                    {
+                        draw.drawLine(new Color(255, 215, 0), arc.getValue().getFromNavPoint().getLocation(), arc.getValue().getToNavPoint().getLocation());
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    public void testAjoutNoeuds()
+    {
+        int navPCpt = 0;
+        for (Entry<UnrealId,NavPoint> navP1 : navPoints.getNavPoints().entrySet())
+        {
+            List<Location> listNavPoint = new ArrayList<Location>();
+            NavPoint p1 = navP1.getValue();
+            Random rand = new Random();
+
+            for (int i = 0; i < 3; i++)
+            {
+                double randX = rand.nextInt(100) + 10;
+                double randY = rand.nextInt(100) + 10;
+                boolean signeX = rand.nextBoolean();
+                boolean signeY = rand.nextBoolean();
+                if (!signeX)
+                {
+                    randX = -randX;
+                }
+                if (!signeY)
+                {
+                    randY = -randY;
+                }
+                
+                double x = p1.getLocation().getX() + randX;
+                double y = p1.getLocation().getY() + randY;
+                double z = p1.getLocation().getZ();
+                String nomPoint = "New NavPoint " + navPCpt;
+                navBuilder.newNavPoint().setLocation(x, y, z).setId(nomPoint).createNavPoint();
+                navBuilder.createSimpleEdgesBetween(p1.getId().getStringId(), nomPoint);
+                navPCpt++;
+            }
+            
+            
+        }
+    }
+    
+    
     @Override
     public void mapInfoObtained() {
+        mapTweaks.register(game.getMapName(), new IMapTweak() {
+            @Override
+            public void tweak(NavigationGraphBuilder builder) {
+                navBuilder.setUsed(true);
+                //Suppression des liens premettant au bot de descendre un ascenseur
+                List<String> navP1Supp = new ArrayList<String>();
+                List<String> navP2Supp = new ArrayList<String>();
+                for (Entry<UnrealId,NavPoint> navP1 : navPoints.getNavPoints().entrySet())
+                {
+                    if (navP1.getValue().isLiftExit())
+                    {
+                        for (Entry<UnrealId, NavPointNeighbourLink> arc : navP1.getValue().getOutgoingEdges().entrySet()) {
+                            NavPoint navP2 = arc.getValue().getToNavPoint();
+                            if (navP2.getLocation().getZ() < navP1.getValue().getLocation().getZ() && navP2.isLiftCenter())
+                            {
+                                navP1Supp.add(navP1.getKey().getStringId());
+                                navP2Supp.add(navP2.getId().getStringId());
+                                
+                                //navBuilder.removeEdge(navP1.getKey().getStringId(), navP2.getId().getStringId());
+                            }
+                        }
+                    }
+                }
+                for (int i = 0; i < navP1Supp.size(); i++)
+                {
+                    navBuilder.removeEdge(navP1Supp.get(i), navP2Supp.get(i));
+                }
+                NavigationMemory memory = new NavigationMemory();
+                try {
+                    memory.fillNavPointsFromMemory(game.getMapName(), navPoints);
+                } catch (IOException ex) {
+                    Logger.getLogger(Bot.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                if (memory.getFromNavPoints() != null)
+                {
+                    for (int i = 0; i < memory.getFromNavPoints().size(); i++)
+                    {
+                        navBuilder.removeEdge(memory.getFromNavPoints().get(i).getId().toString(), memory.getToNavPoints().get(i).getId().toString());
+                    }
+                }
+            }
+        });
+        //testAjoutNoeuds();
+        fwMap.refreshPathMatrix();
+        testDraw();
+        
     	//navMeshModule.setReloadNavMesh(true); // tells NavMesh to reconstruct OffMeshPoints    	
     }
     
@@ -152,6 +300,7 @@ public class Bot extends UT2004BotModuleController {
     public void botInitialized(GameInfo info, ConfigChange currentConfig, InitedMessage init) {
         body.getConfigureCommands().setBotAppearance("HumanMaleA.EgyptMaleA");
         getInitializeCommand().setDesiredSkill(4);
+        navBuilder.setUsed(true);
     }
     
     @Override
@@ -175,7 +324,11 @@ public class Bot extends UT2004BotModuleController {
 
         //meshInit.initSpawn(gameInfo);
         navBot = new BotNavigation(this, /*meshInit*/null);
-        stateRunAround = new RunAroundItem(this, navBot);
+        try {
+            stateRunAround = new RunAroundItem(this, navBot);
+        } catch (IOException ex) {
+            Logger.getLogger(Bot.class.getName()).log(Level.SEVERE, null, ex);
+        }
         engage = new Engage(this, navBot);
         medkit = new Medkit(this, navBot, stateRunAround);
         pursue = new Pursue(this, navBot);
@@ -187,7 +340,13 @@ public class Bot extends UT2004BotModuleController {
         comportement.setNomComportement(comportement.agressif);
         probaA = new ProbabilitesArmes(UT2004ItemType.ASSAULT_RIFLE, 0.5, 5, 0, 0, 0, 500);
         probaA.setMainBot(this);
-        probaA.initProbabilitesA();
+        try {
+            probaA.initProbabilitesA();
+        } catch (IOException ex) {
+            Logger.getLogger(Bot.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        if (memory == null)
+            memory = new NavigationMemory();
         final int rayLength = (int) (UnrealUtils.CHARACTER_COLLISION_RADIUS * 5);
         // settings for the rays
         boolean fastTrace = true;
@@ -218,7 +377,7 @@ public class Bot extends UT2004BotModuleController {
      //{@link PlayerKilled} listener that provides "frag" counting + is switches the state of the hunter.
     //@param event
     @EventListener(eventClass = PlayerKilled.class)
-    public void playerKilled(PlayerKilled event) {
+    public void playerKilled(PlayerKilled event) throws IOException {
         if (event.getKiller().equals(info.getId())) {
             ++frags;
             if (lastEnemy != null) {
@@ -333,12 +492,20 @@ public class Bot extends UT2004BotModuleController {
         
         // 5) are you hurt?			-> get yourself some medKit
         if (shouldCollectHealth && info.getHealth() < healthLevel) {
+            try {
                 medkit.stateMedKit();
+            } catch (IOException ex) {
+                Logger.getLogger(Bot.class.getName()).log(Level.SEVERE, null, ex);
+            }
             return;
         }
         
-        // 6) if nothing ... run around items
-        stateRunAround.stateRunAroundItems();
+        try {
+            // 6) if nothing ... run around items
+            stateRunAround.stateRunAroundItems();
+        } catch (IOException ex) {
+            Logger.getLogger(Bot.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     @Override
@@ -346,8 +513,12 @@ public class Bot extends UT2004BotModuleController {
         if (lastEnemy != null) {
             distanceBotTarget = Math.abs(info.getLocation().getDistance2D(lastEnemy.getLocation()));
         }
-        probaA.nbDIncrement(lastWeaponUsed);
-        probaA.updateProba(lastWeaponUsed);
+        try {
+            probaA.nbDIncrement(lastWeaponUsed);
+            probaA.updateProba(lastWeaponUsed);
+        } catch (IOException ex) {
+            Logger.getLogger(Bot.class.getName()).log(Level.SEVERE, null, ex);
+        }
         probaA.inventaireArmes.clear();
         probaA.setSize(0);
         if (comportement.getNomComportement().equals("Agressif")) {
@@ -451,14 +622,17 @@ public class Bot extends UT2004BotModuleController {
         return pursueCount;
     }
 
+    @Override
     public IUT2004Navigation getNavigation() {
         return navigation;
     }
     
+    @Override
     public AdvancedLocomotion getMove() {
         return move;
     }
 
+    @Override
     public CompleteBotCommandsWrapper getBody() {
         return body;
     }
@@ -475,6 +649,7 @@ public class Bot extends UT2004BotModuleController {
         return pursue;
     }
     
+    @Override
     public Visibility getVisibility()
     {
         return visibility;
