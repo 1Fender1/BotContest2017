@@ -486,7 +486,7 @@ protected List<Item> itemsToRunAround = null;
     protected void stateRunAroundItems() {
         //log.info("Decision is: ITEMS");
         //config.setName("Hunter [ITEMS]");
-        System.out.println("isNavigatingToItem : " + navBot.isNavigatingToItem());
+        
         if (navBot.isNavigatingToItem() && navBot.getItem() != null)
         {
             bot.getBotName().setInfo("ITEM: " + navBot.getItem().getType().getName() + "");
@@ -571,7 +571,7 @@ protected List<Item> itemsToRunAround = null;
         	log.warning("NO ITEM TO RUN FOR!");
         	if (mainBot.getNavigation().isNavigatingToItem()) return;
         	bot.getBotName().setInfo("RANDOM NAV");
-                navBot.navigate();
+                //navBot.navigate();
         } else {
             /*for(Map.Entry<UnrealId, NavPointNeighbourLink> entry : item.getNavPoint().getIncomingEdges().entrySet()){
                 //navBuilder.modifyNavPoint(entry.getValue().getFromNavPoint().getId().getStringId()).removeEdgeTo("DM-1on1-Irondust.PathNode28");

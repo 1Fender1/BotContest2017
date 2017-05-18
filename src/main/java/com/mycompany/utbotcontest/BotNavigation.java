@@ -5,6 +5,7 @@ import cz.cuni.amis.pogamut.base.agent.navigation.impl.PathFuture;
 import cz.cuni.amis.pogamut.base3d.worldview.object.ILocated;
 import cz.cuni.amis.pogamut.base3d.worldview.object.Location;
 import cz.cuni.amis.pogamut.unreal.communication.messages.UnrealId;
+import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Raycasting;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.AgentInfo;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.NavPoints;
 import cz.cuni.amis.pogamut.ut2004.agent.module.utils.TabooSet;
@@ -76,7 +77,9 @@ public class BotNavigation {
     
     private float radius = 100;
     
-    private float radiusLift = 20;
+    private float radiusLift = 30;
+    
+    private float height = 100;
     
     boolean navigatingToItem=false; 
     boolean navigating=false; 
@@ -88,14 +91,18 @@ public class BotNavigation {
     private long debut=0;
     
     private final long tempsStrafe=700;
+    
+    private Raycasting raycast;
         
     private double notMovingSince;
     public BotNavigation(Bot mainBot, MeshInit meshInit)
     {
         this.mainBot = mainBot;
         
-        bot = mainBot.getBot();
+        raycast=mainBot.getRaycasting();
         
+        bot = mainBot.getBot();
+      
         stuckDetector = new AccUT2004DistanceStuckDetector(bot);
         stuckDetector.setBotWaiting(stuckBotWaiting);
         stuckDetector.setEnabled(stuckEnabled);
@@ -120,9 +127,8 @@ public class BotNavigation {
         if (navigation.isNavigating())
         {
             try{
-                List<ILocated> chemin = navigation.getPathExecutor().getPath();
-                int element = navigation.getPathExecutor().getPathElementIndex();
-                int tailleChemin = navigation.getPathExecutor().getPath().size();
+                int element = indexNavAS;
+                int tailleChemin = chemin.size();
                 Alea a = new Alea();
                 List<ILocated> debutChemin = new ArrayList<ILocated>();
                 for (int i = 0; i < element; i++)
@@ -225,7 +231,6 @@ public class BotNavigation {
 		}
 		
 		watch.stop();
-		
 		for (LevelGeometry.RaycastResult raycast : results) {
                     if (raycast.hit) {
                         draw.drawLine(Color.RED, raycast.from, raycast.hitLocation);
@@ -267,6 +272,11 @@ public class BotNavigation {
         return false;
     }*/
     
+    public void stopNavigation(){
+        navigating=false;
+        navigatingToItem=false;
+    }
+    
     public boolean reachable(ILocated item)
     {
         Location botLoc = bot.getLocation();
@@ -305,7 +315,16 @@ public class BotNavigation {
                 else{
                     if(System.currentTimeMillis()-notMovingSince>800){
                         if(stuckLocation.getDistance(info.getLocation())<75){
-                            move.doubleJump();
+                            if(chemin!=null && indexNavAS<chemin.size()){
+                                navigation.setFocus(chemin.get(indexNavAS));
+                                move.moveTo(chemin.get(indexNavAS));
+                            }
+                            move.doubleJump(0.35,700);
+                            if(chemin!=null && indexNavAS<chemin.size()){
+                                navigation.setFocus(chemin.get(indexNavAS));
+                                move.moveTo(chemin.get(indexNavAS));
+                                
+                            }
                             System.out.println("stopNavig");
                             navigatingToItem=false;
                             navigating=false;
@@ -336,41 +355,56 @@ public class BotNavigation {
         return false;
     }
     
+    
+    
     public void mouvement(){
-        if(navPoints.getNearestNavPoint(chemin.get(indexNavAS)).isJumpDest() || navPoints.getNearestNavPoint(chemin.get(indexNavAS)).isJumpSpot()){
-            if(indexNavAS>0){
-                NavPointNeighbourLink link = navPoints.getNearestNavPoint(chemin.get(indexNavAS)).getIncomingEdges().get(navPoints.getNearestNavPoint(chemin.get(indexNavAS-1)).getId());
-                if(link.getNeededJump()!=null){
-                    if(link.isForceDoubleJump()){
+        if(indexNavAS>0){
+            NavPointNeighbourLink link = navPoints.getNearestNavPoint(chemin.get(indexNavAS)).getIncomingEdges().get(navPoints.getNearestNavPoint(chemin.get(indexNavAS-1)).getId());  
+            if(link!=null && link.getNeededJump()!=null){
+                System.out.println("saut");
+                move.moveTo(chemin.get(indexNavAS));
+                move.doubleJump(0.35,700);
+                move.moveTo(chemin.get(indexNavAS));
+                /*if(link.isForceDoubleJump()){
+                    move.moveTo(chemin.get(indexNavAS));
+                    move.doubleJump(0.35,700);
+                    move.moveTo(chemin.get(indexNavAS));
+                }
+                else{
+                    if(mainBot.rayjump.isResult()){
                         move.moveTo(chemin.get(indexNavAS));
-                        move.doubleJump();
+                        move.jump();
+                        move.moveTo(chemin.get(indexNavAS));
                     }
                     else{
                         move.moveTo(chemin.get(indexNavAS));
-                        move.jump();
+                    }
+                }*/
+            }
+            else{
+                if(navPoints.getNearestNavPoint(chemin.get(indexNavAS).getLocation()).isLiftCenter() || navPoints.getNearestNavPoint(chemin.get(indexNavAS-1).getLocation()).isLiftCenter()){
+                    if(Math.abs(info.getLocation().getDistanceZ(chemin.get(indexNavAS).getLocation()))<50){
+                        move.moveTo(chemin.get(indexNavAS));
                     }
                 }
                 else{
                     move.moveTo(chemin.get(indexNavAS));
                 }
-                
-            }
-            else{
-                move.moveTo(chemin.get(indexNavAS));
             }
         }
         else{
             move.moveTo(chemin.get(indexNavAS));
         }
     }
-    
+   
     public boolean navigate() {
         if(isNavigating() && (isNavigatingToItem() || !isStuck())){
             if(chemin!=null && indexNavAS<chemin.size()){
-                if(navPoints.getNearestNavPoint(chemin.get(indexNavAS).getLocation()).isLiftCenter() || navPoints.getNearestNavPoint(chemin.get(indexNavAS).getLocation()).isInvSpot()){
-                    if(info.getLocation().getDistance(chemin.get(indexNavAS).getLocation()) < radiusLift){
+                if(navPoints.getNearestNavPoint(chemin.get(indexNavAS).getLocation()).isJumpSpot() || navPoints.getNearestNavPoint(chemin.get(indexNavAS).getLocation()).isJumpDest() || navPoints.getNearestNavPoint(chemin.get(indexNavAS).getLocation()).isLiftCenter() || navPoints.getNearestNavPoint(chemin.get(indexNavAS).getLocation()).isInvSpot()){
+                    if(info.getLocation().getDistance2D(chemin.get(indexNavAS).getLocation()) < radiusLift && Math.abs(info.getLocation().getDistanceZ(chemin.get(indexNavAS).getLocation()))<height){
                         if(chemin.size()-1==indexNavAS){
                             mouvement();
+                            System.out.println("Je suis arrivé : " + info.getLocation().getDistance2D(chemin.get(indexNavAS).getLocation()));
                             navigatingToItem=false;
                             navigating=false;
                         }
@@ -384,8 +418,9 @@ public class BotNavigation {
                     }
                 }
                 else{
-                    if(info.getLocation().getDistance(chemin.get(indexNavAS).getLocation()) < radius){
+                    if(info.getLocation().getDistance2D(chemin.get(indexNavAS).getLocation()) < radius && Math.abs(info.getLocation().getDistanceZ(chemin.get(indexNavAS).getLocation()))<height){
                         if(chemin.size()-1==indexNavAS){
+                            System.out.println("Je suis arrivé");
                             navigatingToItem=false;
                             navigating=false;
                         }
@@ -430,7 +465,7 @@ public class BotNavigation {
             Location botLoc = bot.getLocation();
             Location itemLoc = neededItem.getLocation();
             //cheminAS = navigationAS.computePath(navigation.getNearestNavPoint(botLoc), navigation.getNearestNavPoint(itemLoc)).get();
-            chemin = navigation.getPathPlanner().computePath(navigation.getNearestNavPoint(botLoc), navPoints.getRandomNavPoint()).get();
+            chemin = navigation.getPathPlanner().computePath(navigation.getNearestNavPoint(botLoc), navigation.getNearestNavPoint(itemLoc)).get();
             if(chemin!=null){
                 notMovingSince=0;
                 indexNavAS=0;

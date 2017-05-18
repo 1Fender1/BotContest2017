@@ -44,6 +44,7 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.ConfigC
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.GameInfo;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.HearNoise;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.InitedMessage;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.NavPointNeighbourLink;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Self;
 import cz.cuni.amis.pogamut.ut2004.utils.UnrealUtils;
 import cz.cuni.amis.utils.exception.PogamutException;
@@ -128,7 +129,7 @@ public class Bot extends UT2004BotModuleController {
     protected static final String LEFT90 = "left90Ray";
     //protected static final String RIGHT45 = "right45Ray";
     protected static final String RIGHT90 = "right90Ray";
-    protected AutoTraceRay left, front, right;
+    protected AutoTraceRay left, front, right, rayjump;
     private boolean first = true;
     private boolean raysInitialized = false;
     @JProp
@@ -142,6 +143,7 @@ public class Bot extends UT2004BotModuleController {
     @JProp
     protected boolean sensor = false;
     
+    public final String RAYJUMP="RAYJUMP";
     
     
     @Override
@@ -153,7 +155,7 @@ public class Bot extends UT2004BotModuleController {
     @Override
     public void botInitialized(GameInfo info, ConfigChange currentConfig, InitedMessage init) {
         body.getConfigureCommands().setBotAppearance("HumanMaleA.EgyptMaleA");
-        getInitializeCommand().setDesiredSkill(4);
+        getInitializeCommand().setDesiredSkill(4);          
     }
     
     @ObjectClassEventListener(objectClass = Self.class, eventClass = WorldObjectUpdatedEvent.class)
@@ -162,7 +164,6 @@ public class Bot extends UT2004BotModuleController {
             navBot.navigate();
         }
         // do this stuff here
-
     }
     
     @Override
@@ -208,16 +209,17 @@ public class Bot extends UT2004BotModuleController {
         getAct().act(new RemoveRay("All"));
 
         raycasting.createRay(FRONT,   new Vector3d(1, 0, 0), rayLength, fastTrace, floorCorrection, traceActor);
-
         raycasting.createRay(LEFT90,  new Vector3d(0, -1, 0), rayLength, fastTrace, floorCorrection, traceActor);
         raycasting.createRay(RIGHT90, new Vector3d(0, 1, 0), rayLength, fastTrace, floorCorrection, traceActor);
-
+        raycasting.createRay(RAYJUMP,  new Vector3d(1, 0, -0.5), rayLength, fastTrace, floorCorrection, traceActor);
+        
         raycasting.getAllRaysInitialized().addListener(new FlagListener<Boolean>() {
             @Override
             public void flagChanged(Boolean changedValue) {
                 left = raycasting.getRay(LEFT90);
                 front = raycasting.getRay(FRONT);
                 right = raycasting.getRay(RIGHT90);
+                rayjump=raycasting.getRay(RAYJUMP);
             }
         });
         raycasting.endRayInitSequence();
@@ -259,6 +261,7 @@ public class Bot extends UT2004BotModuleController {
         enemy = null;
         move.stopMovement();
         stateRunAround.setItemsToRunAround(null);
+        navBot.stopNavigation();
     }
     
     @EventListener(eventClass=PlayerDamaged.class)
@@ -290,7 +293,7 @@ public class Bot extends UT2004BotModuleController {
     public void logic() throws PogamutException {
         Alea pourcentChangeArme = new Alea();
         Alea pourcentChangeComportement = new Alea();;
-        if (!raycasting.getAllRaysInitialized().getFlag()) {
+        if (!raycasting.getAllRaysInitialized().getFlag()){
             return;
         }
         sensorFront = front.isResult();
