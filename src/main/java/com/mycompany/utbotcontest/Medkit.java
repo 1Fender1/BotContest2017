@@ -52,6 +52,8 @@ public class Medkit {
     private boolean runningToPlayer;
     
     private RunAroundItem runAround;
+    
+    private boolean isHeal = false;
 
     public Medkit(Bot mainBot, BotNavigation navBot, RunAroundItem runAround)
     {
@@ -89,12 +91,23 @@ public class Medkit {
         //log.info("Decision is: MEDKIT");
         Item item = items.getPathNearestSpawnedItem(ItemType.Category.HEALTH);
         if (item == null) {
-        	log.warning("NO HEALTH ITEM TO RUN TO => ITEMS");
-                runAround.stateRunAroundItems();
+            log.warning("NO HEALTH ITEM TO RUN TO => ITEMS");
+            runAround.stateRunAroundItems();
         } else {
-        	bot.getBotName().setInfo("MEDKIT");
-                navBot.navigate(item);
-        	navBot.setItem(item);
-        }
+            bot.getBotName().setInfo("MEDKIT");
+            navBot.setItem(item);
+            navBot.navigate(item);
     }
+    }
+
+    public boolean isHeal() {
+        return isHeal;
+    }
+    
+    public void setIsHeal(boolean heal)
+    {
+        isHeal = heal;
+    }
+    
+    
 }

@@ -13,6 +13,7 @@ import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.StopShooting;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Player;
 import cz.cuni.amis.pogamut.ut2004.utils.UnrealUtils;
+import java.io.IOException;
 import java.util.Random;
 
 /**
@@ -49,6 +50,8 @@ public class Engage {
     
     private double longueurStrafe = UnrealUtils.CHARACTER_COLLISION_RADIUS * 10;
     
+    private boolean isEngage = false;
+    
     public Engage(Bot mainBot, BotNavigation navBot)
     {
         this.mainBot = mainBot;
@@ -79,7 +82,7 @@ public class Engage {
     }
     
     
-    public Player stateEngage() {
+    public Player stateEngage() throws IOException {
         //log.info("Decision is: ENGAGE");
         //config.setName("Hunter [ENGAGE]");
         bot.getBotName().setInfo("ENGAGE");
@@ -103,12 +106,13 @@ public class Engage {
 
         // 2) stop shooting if enemy is not visible
         if (!enemy.isVisible()) {
-	        if (info.isShooting() || info.isSecondaryShooting()) {
-                // stop shooting
+            if (info.isShooting() || info.isSecondaryShooting()) {
                 mainBot.getAct().act(new StopShooting());
             }
             runningToPlayer = false;
         } else {
+            /*navBot.setNavigating(false);
+            navBot.setNavigatingToItem(false);*/
             // 2) or shoot on enemy if it is visible
             distance = info.getLocation().getDistance(enemy.getLocation());
             mainBot.getShoot().shoot(enemy);
@@ -158,13 +162,27 @@ public class Engage {
                     runningToPlayer = true;
                 }                
             }
+            navBot.setNavigating(false);
+            navBot.setNavigatingToItem(false);
         } else {
             runningToPlayer = false;
-            mainBot.getNavigation().stopNavigation();
+            navBot.setNavigating(false);
+            navBot.setNavigatingToItem(false);
+            navBot.setNavigating(false);
+            navBot.setNavigatingToItem(false);
         }
         
         navBot.setItem(null);
         return enemy;
+    }
+
+    public boolean isEngage() {
+        return isEngage;
+    }
+    
+    public void setEngage(boolean engage)
+    {
+        isEngage = engage;
     }
     
     

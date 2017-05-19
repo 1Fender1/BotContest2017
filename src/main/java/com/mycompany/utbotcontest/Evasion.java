@@ -18,6 +18,7 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.NavPoin
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Player;
 import cz.cuni.amis.pogamut.ut2004.hideandseek.bot.UT2004BotHSController;
 import cz.cuni.amis.utils.collections.MyCollections;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +90,8 @@ public class Evasion extends UT2004BotHSController<UT2004Bot> {
         
         this.allNavPoints = getAllNavPoints();
     }
+
+  
     
     
     private List<Player> getEnnemies()
@@ -272,7 +275,7 @@ public class Evasion extends UT2004BotHSController<UT2004Bot> {
         return MyCollections.getRandom(getHiddenNavPoints());
     }
     
-    public void randomEvasion()
+    public void randomEvasion() throws IOException
     {
         if (mainBot.getPlayers().canSeeEnemies())
         {
@@ -284,7 +287,7 @@ public class Evasion extends UT2004BotHSController<UT2004Bot> {
         }
     }
     
-    public void itemEvasion()
+    public void itemEvasion() throws IOException
     {
         bot.getBotName().setInfo("Evasion");
         if (mainBot.getPlayers().canSeeEnemies())
@@ -316,6 +319,10 @@ public class Evasion extends UT2004BotHSController<UT2004Bot> {
     public boolean isEvading()
     {
         return isEvading;
+    }
+    
+      public void setIsEvading(boolean isEvading) {
+        this.isEvading = isEvading;
     }
     
 }

@@ -4,6 +4,8 @@ package com.mycompany.utbotcontest;
 import com.sun.javafx.geom.Edge;
 import cz.cuni.amis.introspection.java.JProp;
 import cz.cuni.amis.pogamut.base.communication.worldview.listener.annotation.EventListener;
+import cz.cuni.amis.pogamut.base.communication.worldview.listener.annotation.ObjectClassEventListener;
+import cz.cuni.amis.pogamut.base.communication.worldview.object.event.WorldObjectUpdatedEvent;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.UT2004PathAutoFixer;
 import cz.cuni.amis.utils.flag.FlagListener;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
@@ -15,6 +17,7 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.PlayerD
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.PlayerKilled;
 import cz.cuni.amis.pogamut.base.utils.guice.AgentScoped;
 import cz.cuni.amis.pogamut.base.utils.logging.LogCategory;
+import cz.cuni.amis.pogamut.base3d.worldview.object.ILocated;
 import cz.cuni.amis.pogamut.base3d.worldview.object.Location;
 import cz.cuni.amis.pogamut.base3d.worldview.object.Rotation;
 import cz.cuni.amis.pogamut.base3d.worldview.object.Velocity;
@@ -73,7 +76,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.vecmath.Vector3d;
@@ -158,7 +160,7 @@ public class Bot extends UT2004BotModuleController {
     protected static final String LEFT90 = "left90Ray";
     //protected static final String RIGHT45 = "right45Ray";
     protected static final String RIGHT90 = "right90Ray";
-    protected AutoTraceRay left, front, right;
+    protected AutoTraceRay left, front, right, rayjump;
     private boolean first = true;
     private boolean raysInitialized = false;
     @JProp
@@ -171,6 +173,10 @@ public class Bot extends UT2004BotModuleController {
     protected boolean moving = false;
     @JProp
     protected boolean sensor = false;
+    
+    public final String RAYJUMP="RAYJUMP";
+    
+    protected ILocated focus;
     
     
     
@@ -356,16 +362,17 @@ public class Bot extends UT2004BotModuleController {
         getAct().act(new RemoveRay("All"));
 
         raycasting.createRay(FRONT,   new Vector3d(1, 0, 0), rayLength, fastTrace, floorCorrection, traceActor);
-
         raycasting.createRay(LEFT90,  new Vector3d(0, -1, 0), rayLength, fastTrace, floorCorrection, traceActor);
         raycasting.createRay(RIGHT90, new Vector3d(0, 1, 0), rayLength, fastTrace, floorCorrection, traceActor);
-
+        raycasting.createRay(RAYJUMP,  new Vector3d(1, 0, -0.5), rayLength, fastTrace, floorCorrection, traceActor);
+        
         raycasting.getAllRaysInitialized().addListener(new FlagListener<Boolean>() {
             @Override
             public void flagChanged(Boolean changedValue) {
                 left = raycasting.getRay(LEFT90);
                 front = raycasting.getRay(FRONT);
                 right = raycasting.getRay(RIGHT90);
+                rayjump=raycasting.getRay(RAYJUMP);
             }
         });
         raycasting.endRayInitSequence();
@@ -406,7 +413,13 @@ public class Bot extends UT2004BotModuleController {
     	navBot.setItem(null);
         enemy = null;
         move.stopMovement();
+        
         stateRunAround.setItemsToRunAround(null);
+        engage.setEngage(false);
+        pursue.setIsPursue(false);
+        evasion.setIsEvading(false);
+        hit.setIsHit(false);
+        medkit.setIsHeal(false);        
     }
     
     @EventListener(eventClass=PlayerDamaged.class)
@@ -438,8 +451,9 @@ public class Bot extends UT2004BotModuleController {
     public void logic() throws PogamutException {
         Alea pourcentChangeArme = new Alea();
         Alea pourcentChangeComportement = new Alea();
-        navBot.botFocus();
-        navBot.mouvementAleatoire();
+        
+        focus = navBot.botFocus();
+        
         if (!raycasting.getAllRaysInitialized().getFlag()) {
             return;
         }
@@ -462,13 +476,32 @@ public class Bot extends UT2004BotModuleController {
         //
         if (souldEscape && enemy != null && info.isFacing(enemy, 45) && info.getHealth() < 75)
         {
-            evasion.itemEvasion();
+           // engage.set
+            engage.setEngage(false);
+            pursue.setIsPursue(false);
+            evasion.setIsEvading(true);
+            hit.setIsHit(false);
+            medkit.setIsHeal(false);  
+            try {
+                evasion.itemEvasion();
+            } catch (IOException ex) {
+                Logger.getLogger(Bot.class.getName()).log(Level.SEVERE, null, ex);
+            }
             return;
         }
         
         // 1) do you see enemy? 	-> go to PURSUE (start shooting / hunt the enemy)
         if (shouldEngage && enemy != null && info.isFacing(enemy, 45) && weaponry.hasLoadedWeapon()) {
-            enemy = engage.stateEngage();
+            engage.setEngage(true);
+            pursue.setIsPursue(false);
+            evasion.setIsEvading(false);
+            hit.setIsHit(false);
+            medkit.setIsHeal(false);  
+            try {
+                enemy = engage.stateEngage();
+            } catch (IOException ex) {
+                Logger.getLogger(Bot.class.getName()).log(Level.SEVERE, null, ex);
+            }
             return;
         }
         
@@ -479,6 +512,11 @@ public class Bot extends UT2004BotModuleController {
         
         // 3) are you being shot? 	-> go to HIT (turn around - try to find your enemy)
         if (senses.isBeingDamaged()) {
+            engage.setEngage(false);
+            pursue.setIsPursue(false);
+            evasion.setIsEvading(false);
+            hit.setIsHit(true);
+            medkit.setIsHeal(false);  
             hit.stateHit();
             return;
         }
@@ -486,20 +524,25 @@ public class Bot extends UT2004BotModuleController {
         //System.out.println("==========enemy " + enemy + " ===================");
         // 4) have you got enemy to pursue? -> go to the last position of enemy
         if (enemy != null && shouldPursue && weaponry.hasLoadedWeapon()) {  // !enemy.isVisible() because of 2)
-            pursue.statePursue();
-            return;
-        }
-        
-        // 5) are you hurt?			-> get yourself some medKit
-        if (shouldCollectHealth && info.getHealth() < healthLevel) {
+            engage.setEngage(false);
+            pursue.setIsPursue(true);
+            evasion.setIsEvading(false);
+            hit.setIsHit(false);
+            medkit.setIsHeal(false);  
             try {
-                medkit.stateMedKit();
+                pursue.statePursue();
             } catch (IOException ex) {
                 Logger.getLogger(Bot.class.getName()).log(Level.SEVERE, null, ex);
             }
             return;
         }
-        
+
+        engage.setEngage(false);
+        pursue.setIsPursue(false);
+        evasion.setIsEvading(false);
+        hit.setIsHit(false);
+        medkit.setIsHeal(false);   
+       
         try {
             // 6) if nothing ... run around items
             stateRunAround.stateRunAroundItems();
@@ -529,6 +572,18 @@ public class Bot extends UT2004BotModuleController {
         }
         comportement.setEnemyCount(0);     
     	reset();
+    }
+    
+    @ObjectClassEventListener(objectClass = Self.class, eventClass = WorldObjectUpdatedEvent.class)
+    public void selfUpdated(WorldObjectUpdatedEvent<Self> event) throws IOException {
+        if (engage != null && pursue != null && evasion != null && hit != null)
+        {
+            System.out.println("combat : " + engage.isEngage() + " poursuit " + pursue.isPursue() + " evasion " + evasion.isEvading() + " touché " + hit.isHit());
+            if((navBot.isNavigating() || navBot.isNavigatingToItem()) && navBot!=null && !engage.isEngage() && !pursue.isPursue() && !evasion.isEvading() && !hit.isHit()){
+                System.out.println("Je passe par là !");
+                navBot.navigate();
+            }
+        }
     }
 
     public boolean isRunningToPlayer() {
@@ -683,5 +738,11 @@ public class Bot extends UT2004BotModuleController {
     public void setEvasion(boolean etat) {
         this.souldEscape = etat;
     }
+
+    public ILocated getFocus() {
+        return focus;
+    }
+    
+    
     
 }

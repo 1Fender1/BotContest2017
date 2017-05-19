@@ -11,6 +11,7 @@ import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Game;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Items;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.NavPoints;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.WeaponPrefs;
+import cz.cuni.amis.pogamut.ut2004.agent.module.utils.TabooSet;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.NavigationState;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.pathfollowing.NavMeshNavigation;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 
 /**
  *
@@ -69,6 +71,8 @@ public class RunAroundItem {
     
     private List<Item> knowItems;
     
+    TabooSet<Item> tabooItems;
+    
     public RunAroundItem(Bot mainBot, BotNavigation navBot) throws IOException
     {
         this.mainBot = mainBot;
@@ -94,6 +98,8 @@ public class RunAroundItem {
         this.log = mainBot.getLog();
         
         this.probaA = mainBot.getProbaArmes();
+        
+        tabooItems = new TabooSet<Item>(bot);
         
         this.knowItems = memory.getItems(mainBot.getGame().getMapName(), mainBot.getItems());
         if (knowItems != null) 
@@ -514,6 +520,14 @@ public class RunAroundItem {
         }
     }
     
+    public void copySetToList(Set s, List l){
+        Object[] tab=s.toArray();
+        l.clear();
+        for(int i =0; i<s.size(); i++){
+            l.add(tab[i]);
+        }
+    }
+    
     ////////////////////////////
     // STATE RUN AROUND ITEMS //
     ////////////////////////////
@@ -524,17 +538,20 @@ protected List<Item> itemsToRunAround = null;
         //config.setName("Hunter [ITEMS]");
         addNewItems();
         
-        
-        if (mainBot.getNavigation().isNavigatingToItem() && navBot.getItem() != null)
+        if (navBot.isNavigatingToItem() && navBot.getItem() != null)
         {
             bot.getBotName().setInfo("ITEM: " + navBot.getItem().getType().getName() + "");
+            if(navBot.isStuck()){
+                log.info("ADD TABOO: " + navBot.getItem().getType().getName());
+                tabooItems.add(navBot.getItem(), 180);
+            }
         }
         else
         {
             bot.getBotName().setInfo("RUN AROUND ITEM");
         }
-       
-        if (mainBot.getNavigation().isNavigatingToItem()) return;
+        
+        if (navBot.isNavigatingToItem()) return;
         
         List<Item> interesting = new ArrayList<Item>();
         
@@ -578,6 +595,7 @@ protected List<Item> itemsToRunAround = null;
         }
         
        // Item item = MyCollections.getRandom(tabooItems.filter(interesting));
+       copySetToList(tabooItems.filter(interesting),interesting);
        Item item = null;
        item = existNearInterstingItem(interesting);
        navBot.setItem(item);
@@ -604,6 +622,10 @@ protected List<Item> itemsToRunAround = null;
         	log.info("RUNNING FOR: " + item.getType().getName());
         	bot.getBotName().setInfo("ITEM: " + item.getType().getName() + "");
                 navBot.navigate(item);
+                if(!navBot.navigate(item)){
+                log.info("ADD TABOO: " + item.getType().getName());
+                tabooItems.add(item, 180);
+            }
         }        
     }
 

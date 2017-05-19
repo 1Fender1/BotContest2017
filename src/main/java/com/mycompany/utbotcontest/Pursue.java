@@ -12,6 +12,7 @@ import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.WeaponPrefs;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.pathfollowing.NavMeshNavigation;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Player;
+import java.io.IOException;
 import java.util.HashSet;
 
 /**
@@ -46,6 +47,7 @@ public class Pursue {
     
     private boolean runningToPlayer;
     
+    private boolean isPursue = false;
 
     public Pursue(Bot mainBot, BotNavigation navBot)
     {
@@ -77,7 +79,7 @@ public class Pursue {
         
     }
        
-    protected void statePursue() {
+    protected void statePursue() throws IOException {
         //log.info("Decision is: PURSUE");
         bot.getBotName().setInfo("PURSUE");
         enemy = mainBot.getEnemy();
@@ -91,7 +93,6 @@ public class Pursue {
         	navBot.navigate(enemy.getLocation());
                 mainBot.getNavigation().setContinueTo(enemy.getLocation());
                 mainBot.getNavigation().setFocus(enemy.getLocation());
-            
         	navBot.setItem(null);
         } else {
             navBot.setItem(null);
@@ -99,4 +100,14 @@ public class Pursue {
             mainBot.getMove().stopMovement();
         }
     } 
+
+    public boolean isPursue() {
+        return isPursue;
+    }
+
+    public void setIsPursue(boolean isPursue) {
+        this.isPursue = isPursue;
+    }
+    
+    
 }
