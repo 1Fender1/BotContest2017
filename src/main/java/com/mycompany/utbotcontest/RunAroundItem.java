@@ -16,7 +16,6 @@ import cz.cuni.amis.pogamut.ut2004.agent.navigation.NavigationState;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.pathfollowing.NavMeshNavigation;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType;
-import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType.Category;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.UT2004ItemType;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Item;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.GameInfo;
@@ -543,7 +542,7 @@ protected List<Item> itemsToRunAround = null;
             bot.getBotName().setInfo("ITEM: " + navBot.getItem().getType().getName() + "");
             if(navBot.isStuck()){
                 log.info("ADD TABOO: " + navBot.getItem().getType().getName());
-                tabooItems.add(navBot.getItem(), 180);
+                tabooItems.add(navBot.getItem(), 120);
             }
         }
         else
@@ -551,13 +550,19 @@ protected List<Item> itemsToRunAround = null;
             bot.getBotName().setInfo("RUN AROUND ITEM");
         }
         
-        if (navBot.isNavigatingToItem()) return;
+        if (navBot.isNavigatingToItem()) 
+        {
+            return;
+        }
+            
         
         List<Item> interesting = new ArrayList<Item>();
         
         // ADD WEAPONS
         for (ItemType itemType : ItemType.Category.WEAPON.getTypes()) {
-        	if (!weaponry.hasLoadedWeapon(itemType)) 
+        	if (!weaponry.hasLoadedWeapon(itemType))
+                    
+                    //interesting.addAll(items.getKnownPickups(itemType).values());
                     interesting.addAll(items.getSpawnedItems(itemType).values());
         }
         
@@ -565,25 +570,34 @@ protected List<Item> itemsToRunAround = null;
         for (ItemType itemType : ItemType.Category.ARMOR.getTypes()) {
             if (info.getArmor() < game.getMaxLowArmor())
             {
+                //interesting.addAll(items.getKnownPickups(itemType).values());
                 interesting.addAll(items.getSpawnedItems(itemType).values());
             }
             else if (info.getArmor() < game.getMaxArmor())
             {
+                //interesting.addAll(items.getKnownPickups(UT2004ItemType.SUPER_SHIELD_PACK).values());
+                //interesting.addAll(items.getAllItems(UT2004ItemType.SUPER_SHIELD_PACK).values());
                 interesting.addAll(items.getSpawnedItems(UT2004ItemType.SUPER_SHIELD_PACK).values());
             }
         }
         // ADD QUADS
+        //interesting.addAll(items.getKnownPickups(UT2004ItemType.U_DAMAGE_PACK).values());
+        //interesting.addAll(items.getAllItems(UT2004ItemType.U_DAMAGE_PACK).values());
         interesting.addAll(items.getSpawnedItems(UT2004ItemType.U_DAMAGE_PACK).values());
         
         // ADD HEALTHS
         for (ItemType itemType : ItemType.Category.HEALTH.getTypes())
         {
             if (info.getHealth() < 100) {
+                //interesting.addAll(items.getKnownPickups(itemType).values());
+                //interesting.addAll(items.getAllItems(itemType).values());
         	interesting.addAll(items.getSpawnedItems(itemType).values());
             }
             else if (info.getHealth() >= 100 && info.getHealth() < game.getMaxHealth())
-            {
-                interesting.addAll(items.getSpawnedItems(UT2004ItemType.MINI_HEALTH_PACK).values());
+            {   
+                //interesting.addAll(items.getKnownPickups(UT2004ItemType.MINI_HEALTH_PACK).values());
+                //interesting.addAll(items.getAllItems(UT2004ItemType.MINI_HEALTH_PACK).values());
+               interesting.addAll(items.getSpawnedItems(UT2004ItemType.MINI_HEALTH_PACK).values());
             }
         }
         
@@ -591,10 +605,12 @@ protected List<Item> itemsToRunAround = null;
         for (ItemType itemType : ItemType.Category.AMMO.getTypes())
         {
             if (weaponry.hasLoadedWeapon(weaponry.getWeaponForAmmo(itemType)) && (weaponry.getAmmo(itemType) < weaponry.getMaxAmmo(itemType)))
+                //interesting.addAll(items.getKnownPickups(itemType).values());
+                //interesting.addAll(items.getAllItems(itemType).values());
                 interesting.addAll(items.getSpawnedItems(itemType).values());
         }
         
-       // Item item = MyCollections.getRandom(tabooItems.filter(interesting));
+       //Item item = MyCollections.getRandom(tabooItems.filter(interesting));
        copySetToList(tabooItems.filter(interesting),interesting);
        Item item = null;
        item = existNearInterstingItem(interesting);

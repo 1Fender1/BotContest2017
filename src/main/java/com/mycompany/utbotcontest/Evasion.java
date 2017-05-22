@@ -12,7 +12,7 @@ import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.NavPoints;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.WeaponPrefs;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.pathfollowing.NavMeshNavigation;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
-import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.UT2004ItemType;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Item;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.NavPoint;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Player;
@@ -289,27 +289,55 @@ public class Evasion extends UT2004BotHSController<UT2004Bot> {
     
     public void itemEvasion() throws IOException
     {
-        bot.getBotName().setInfo("Evasion");
-        if (mainBot.getPlayers().canSeeEnemies())
+        if (visibility != null && visibility.isInitialized())
         {
-            isEvading = true;
-            Alea rand = new Alea();
-            mainBot.getNavigation().setFocus(mainBot.getEnemy());
-            if (!mainBot.getNavigation().isNavigatingToNavPoint())
+            bot.getBotName().setInfo("Evasion");
+            if (mainBot.getPlayers().canSeeEnemies())
             {
-                NavPoint item = getBestEvasionItem();
-                navBot.navigate(item);
-            }
-            mainBot.getShoot().shoot(mainBot.getPlayers().getNearestVisibleEnemy());
-            if (rand.pourcentDeChance(25))
-            {
-                mainBot.getMove().jump();
+                isEvading = true;
+                Alea rand = new Alea();
+                mainBot.getNavigation().setFocus(mainBot.getEnemy());
+                if (!mainBot.getNavigation().isNavigatingToNavPoint())
+                {
+                    NavPoint item = getBestEvasionItem();
+                    navBot.navigate(item);
+                }
+                mainBot.getShoot().shoot(mainBot.getPlayers().getNearestVisibleEnemy());
+                if (rand.pourcentDeChance(25))
+                {
+                    mainBot.getMove().jump();
+                }
             }
         }
-        else if (mainBot.getNavigation().isNavigating())
+        else
         {
-            navBot.botFocus();
+            bot.getBotName().setInfo("Evasion");
+            if (mainBot.getPlayers().canSeeEnemies())
+            {
+                isEvading = true;
+                Alea rand = new Alea();
+                mainBot.getNavigation().setFocus(mainBot.getEnemy());
+                if (!mainBot.getNavigation().isNavigatingToNavPoint())
+                {
+                    Item itemArmor =  mainBot.getItems().getNearestItem(UT2004ItemType.SUPER_SHIELD_PACK);
+                    Item itemHealth = mainBot.getItems().getNearestItem(UT2004ItemType.HEALTH_PACK);
+                    if (rand.pourcentDeChance(50))
+                    {
+                        navBot.navigate(itemArmor);
+                    }
+                    else
+                    {
+                        navBot.navigate(itemHealth);
+                    }
+                }
+                mainBot.getShoot().shoot(mainBot.getPlayers().getNearestVisibleEnemy());
+                if (rand.pourcentDeChance(25))
+                {
+                    mainBot.getMove().jump();
+                }
+            }
         }
+
         if (isHide())
         {
             isEvading = false;

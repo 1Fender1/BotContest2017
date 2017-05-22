@@ -49,6 +49,7 @@ import cz.cuni.amis.pogamut.ut2004.bot.command.CompleteBotCommandsWrapper;
 import cz.cuni.amis.pogamut.ut2004.bot.command.ImprovedShooting;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004BotModuleController;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemTypeTranslator;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Configuration;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Initialize;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.RemoveRay;
@@ -61,6 +62,8 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Item;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.NavPoint;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.NavPointNeighbourLink;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Self;
+import cz.cuni.amis.pogamut.ut2004.communication.translator.bot.BotFSM;
+import cz.cuni.amis.pogamut.ut2004.communication.translator.itemdescriptor.ItemTranslator;
 import cz.cuni.amis.pogamut.ut2004.communication.worldview.map.UT2004Map;
 import cz.cuni.amis.pogamut.ut2004.utils.UnrealUtils;
 import cz.cuni.amis.utils.exception.PogamutException;
@@ -212,43 +215,6 @@ public class Bot extends UT2004BotModuleController {
     }
     
     
-    public void testAjoutNoeuds()
-    {
-        int navPCpt = 0;
-        for (Entry<UnrealId,NavPoint> navP1 : navPoints.getNavPoints().entrySet())
-        {
-            List<Location> listNavPoint = new ArrayList<Location>();
-            NavPoint p1 = navP1.getValue();
-            Random rand = new Random();
-
-            for (int i = 0; i < 3; i++)
-            {
-                double randX = rand.nextInt(100) + 10;
-                double randY = rand.nextInt(100) + 10;
-                boolean signeX = rand.nextBoolean();
-                boolean signeY = rand.nextBoolean();
-                if (!signeX)
-                {
-                    randX = -randX;
-                }
-                if (!signeY)
-                {
-                    randY = -randY;
-                }
-                
-                double x = p1.getLocation().getX() + randX;
-                double y = p1.getLocation().getY() + randY;
-                double z = p1.getLocation().getZ();
-                String nomPoint = "New NavPoint " + navPCpt;
-                navBuilder.newNavPoint().setLocation(x, y, z).setId(nomPoint).createNavPoint();
-                navBuilder.createSimpleEdgesBetween(p1.getId().getStringId(), nomPoint);
-                navPCpt++;
-            }
-            
-            
-        }
-    }
-    
     
     @Override
     public void mapInfoObtained() {
@@ -305,7 +271,7 @@ public class Bot extends UT2004BotModuleController {
     @Override
     public void botInitialized(GameInfo info, ConfigChange currentConfig, InitedMessage init) {
         body.getConfigureCommands().setBotAppearance("HumanMaleA.EgyptMaleA");
-        getInitializeCommand().setDesiredSkill(4);
+        getInitializeCommand().setDesiredSkill(5);
         navBuilder.setUsed(true);
     }
     
@@ -341,7 +307,6 @@ public class Bot extends UT2004BotModuleController {
         hit = new Hit(this, navBot);
         evasion = new Evasion(this, navBot);
         VisibilityMatrix visibilityMatrix = new VisibilityMatrix(game.getMapName(), 10000);
-        visibilityMatrix.load(new File("./"), game.getMapName());
         comportement = new Comportement(this);
         comportement.setNomComportement(comportement.agressif);
         probaA = new ProbabilitesArmes(UT2004ItemType.ASSAULT_RIFLE, 0.5, 5, 0, 0, 0, 500);
@@ -377,7 +342,8 @@ public class Bot extends UT2004BotModuleController {
         });
         raycasting.endRayInitSequence();
         getAct().act(new Configuration().setDrawTraceLines(true).setAutoTrace(true));
-
+        
+        
     }
     
     
@@ -578,9 +544,7 @@ public class Bot extends UT2004BotModuleController {
     public void selfUpdated(WorldObjectUpdatedEvent<Self> event) throws IOException {
         if (engage != null && pursue != null && evasion != null && hit != null)
         {
-            System.out.println("combat : " + engage.isEngage() + " poursuit " + pursue.isPursue() + " evasion " + evasion.isEvading() + " touché " + hit.isHit());
             if((navBot.isNavigating() || navBot.isNavigatingToItem()) && navBot!=null && !engage.isEngage() && !pursue.isPursue() && !evasion.isEvading() && !hit.isHit()){
-                System.out.println("Je passe par là !");
                 navBot.navigate();
             }
         }

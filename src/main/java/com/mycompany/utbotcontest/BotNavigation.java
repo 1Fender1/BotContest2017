@@ -289,14 +289,19 @@ public class BotNavigation {
                     if(System.currentTimeMillis()-notMovingSince>800){
                         if(stuckLocation.getDistance(info.getLocation())<75){
                             if (indexNavAS > 0)
-                                memory.addInfo(mainBot.getGame().getMapName(), navPoints.getNearestNavPoint(chemin.get(indexNavAS-1)).getId().getStringId(), navPoints.getNearestNavPoint(chemin.get(indexNavAS)).getId().getStringId());
+                            {
+                                NavPoint navPFromTemp = navPoints.getNearestNavPoint(chemin.get(indexNavAS-1));
+                                NavPoint navPToTemp = navPoints.getNearestNavPoint(chemin.get(indexNavAS));
+                                if (!navPFromTemp.isLiftCenter() && !navPFromTemp.isLiftExit() && !navPFromTemp.isLiftJumpExit() && !navPToTemp.isLiftCenter() && !navPToTemp.isLiftExit() && !navPToTemp.isLiftJumpExit())
+                                    memory.addInfo(mainBot.getGame().getMapName(), navPoints.getNearestNavPoint(chemin.get(indexNavAS-1)).getId().getStringId(), navPoints.getNearestNavPoint(chemin.get(indexNavAS)).getId().getStringId());
+                            }
                             if(chemin!=null && indexNavAS<chemin.size()){
-                                navigation.setFocus(chemin.get(indexNavAS));
-                                ILocated vue = mainBot.getFocus();
-                                if (vue != null)
-                                    move.strafeTo(chemin.get(indexNavAS), vue);
-                                else
-                                    move.moveTo(chemin.get(indexNavAS));
+                            navigation.setFocus(chemin.get(indexNavAS));
+                            ILocated vue = mainBot.getFocus();
+                            if (vue != null)
+                                move.strafeTo(chemin.get(indexNavAS), vue);
+                            else
+                                move.moveTo(chemin.get(indexNavAS));
                             }
                             move.doubleJump(0.35,700);
                             if(chemin!=null && indexNavAS<chemin.size()){

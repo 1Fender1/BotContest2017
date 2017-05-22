@@ -162,12 +162,8 @@ public class Engage {
                     runningToPlayer = true;
                 }                
             }
-            navBot.setNavigating(false);
-            navBot.setNavigatingToItem(false);
         } else {
             runningToPlayer = false;
-            navBot.setNavigating(false);
-            navBot.setNavigatingToItem(false);
             navBot.setNavigating(false);
             navBot.setNavigatingToItem(false);
         }
