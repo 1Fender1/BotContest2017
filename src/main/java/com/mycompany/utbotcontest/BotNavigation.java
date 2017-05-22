@@ -78,7 +78,7 @@ public class BotNavigation {
     
     private float radius = 100;
     
-    private float radiusLift = 30;
+    private float radiusLift = 50;
     
     private float height = 100;
     
@@ -368,7 +368,7 @@ public class BotNavigation {
             else{
                 if(navPoints.getNearestNavPoint(chemin.get(indexNavAS).getLocation()).isLiftCenter() || navPoints.getNearestNavPoint(chemin.get(indexNavAS-1).getLocation()).isLiftCenter()){
                     notMovingSince=System.currentTimeMillis();
-                    if(Math.abs(info.getFloorLocation().getDistanceZ(chemin.get(indexNavAS).getLocation()))<30){
+                    if(Math.abs(info.getLocation().getDistanceZ(chemin.get(indexNavAS).getLocation()))<50){
                         mouvFocus();
                     }
                 }
@@ -376,8 +376,6 @@ public class BotNavigation {
                     mouvFocus();
                 }
             }
-            //move.turnTo(chemin.get(indexNavAS));
-            mouvFocus();
             
         }
         else{
