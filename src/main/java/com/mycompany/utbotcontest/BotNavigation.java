@@ -97,7 +97,9 @@ public class BotNavigation {
     
     private Raycasting raycast;
         
-    private double notMovingSince;
+    private double notMovingSinceIndex;
+    
+    private int stuckIndex=-1;
     
     private NavigationMemory memory;
     
@@ -251,6 +253,8 @@ public class BotNavigation {
     public void stopNavigation(){
         navigating=false;
         navigatingToItem=false;
+        stuckIndex=-1;
+        notMovingSinceIndex=System.currentTimeMillis();
     }
     
     public boolean reachable(ILocated item)
@@ -280,79 +284,39 @@ public class BotNavigation {
     private Location stuckLocation = null;
     public boolean isStuck() throws IOException{
         if(isNavigating()){
-            if(stuckLocation==null){
-                stuckLocation=info.getLocation();
-                notMovingSince=System.currentTimeMillis();
+            if(indexNavAS!=stuckIndex){
+                stuckIndex=indexNavAS;
+                notMovingSinceIndex=System.currentTimeMillis();
             }
             else{
-                if(notMovingSince==0){
-                    notMovingSince=System.currentTimeMillis();
-                }
-                else{
-                    if(System.currentTimeMillis()-notMovingSince>800){
-                        if(stuckLocation.getDistance(info.getLocation())<75){
-                            if (indexNavAS > 0)
+                if(System.currentTimeMillis()-notMovingSinceIndex>3000){
+                    mouvFocus();
+                    move.doubleJump(0.35,700);
+                    mouvFocus();
+                    System.out.println("stopNavig");
+                    stopNavigation();
+                    if (indexNavAS > 0)
+                    {
+                        NavPoint navPFromTemp = navPoints.getNearestNavPoint(chemin.get(indexNavAS-1));
+                        NavPoint navPToTemp = navPoints.getNearestNavPoint(chemin.get(indexNavAS));
+                        if (!navPToTemp.isLiftCenter() && !navPToTemp.isLiftExit() && !navPToTemp.isLiftJumpExit())
+                        {
+                            memory.addInfo(mainBot.getGame().getMapName(), navPoints.getNearestNavPoint(chemin.get(indexNavAS-1)).getId().getStringId(), navPoints.getNearestNavPoint(chemin.get(indexNavAS)).getId().getStringId());
+                            if (mainBot.getLearning())
                             {
-                                NavPoint navPFromTemp = navPoints.getNearestNavPoint(chemin.get(indexNavAS-1));
-                                NavPoint navPToTemp = navPoints.getNearestNavPoint(chemin.get(indexNavAS));
-                                if (!navPToTemp.isLiftCenter() && !navPToTemp.isLiftExit() && !navPToTemp.isLiftJumpExit())
+                                mainBot.setSecondTimeLearning(System.currentTimeMillis());
+                                if ((mainBot.getSecondTimeLearning() - mainBot.getFirstTimeLearning()) >= 50000)
                                 {
-                                    memory.addInfo(mainBot.getGame().getMapName(), navPoints.getNearestNavPoint(chemin.get(indexNavAS-1)).getId().getStringId(), navPoints.getNearestNavPoint(chemin.get(indexNavAS)).getId().getStringId());
-                                    if (mainBot.getLearning())
-                                    {
-                                        mainBot.setSecondTimeLearning(System.currentTimeMillis());
-                                        if ((mainBot.getSecondTimeLearning() - mainBot.getFirstTimeLearning()) >= 50000)
-                                        {
-                                            mainBot.setFirstTimeLearning(mainBot.getSecondTimeLearning());
-                                        }
-                                        System.out.println("Erreur !");
-                                        mainBot.getAct().act(new Respawn());
-                                    }
+                                    mainBot.setFirstTimeLearning(mainBot.getSecondTimeLearning());
                                 }
+                                mainBot.getAct().act(new Respawn());
                             }
-                            if(chemin!=null && indexNavAS<chemin.size()){
-                            navigation.setFocus(chemin.get(indexNavAS));
-                            ILocated vue = mainBot.getFocus();
-                            if (vue != null)
-                                move.strafeTo(chemin.get(indexNavAS), vue);
-                            else
-                                move.moveTo(chemin.get(indexNavAS));
-                            }
-                            move.doubleJump(0.35,700);
-                            if(chemin!=null && indexNavAS<chemin.size()){
-                                navigation.setFocus(chemin.get(indexNavAS));
-                                ILocated vue = mainBot.getFocus();
-                                if (vue != null)
-                                    move.strafeTo(chemin.get(indexNavAS), vue);
-                                else
-                                    move.moveTo(chemin.get(indexNavAS));
-                            }
-                            System.out.println("stopNavig");
-                            navigatingToItem=false;
-                            navigating=false;
-                            return true;
                         }
-                        else{
-                            stuckLocation=info.getLocation();
-                            notMovingSince=System.currentTimeMillis();
-                        }
+                    
                     }
+                    return true;
                 }
-                
             }
-            /*if(info.getVelocity().x<5 && info.getVelocity().y<5 && info.getVelocity().z<5){
-                if(notMovingSince==0){
-                    notMovingSince=System.currentTimeMillis();
-                }
-                else{
-                    if(System.currentTimeMillis()-notMovingSince>800){
-                        System.out.println("stopNavig");
-                        navigatingToItem=false;
-                        navigating=false;
-                        return true;
-                    }
-                }
-            }*/
         }
         return false;
     }
@@ -387,7 +351,6 @@ public class BotNavigation {
             }
             else{
                 if(navPoints.getNearestNavPoint(chemin.get(indexNavAS).getLocation()).isLiftCenter() || navPoints.getNearestNavPoint(chemin.get(indexNavAS-1).getLocation()).isLiftCenter()){
-                    notMovingSince=System.currentTimeMillis();
                     if(Math.abs(info.getLocation().getDistanceZ(chemin.get(indexNavAS).getLocation()))<50){
                         mouvFocus();
                     }
@@ -449,10 +412,10 @@ public class BotNavigation {
             Location botLoc = bot.getLocation();
             //cheminAS = navigationAS.computePath(navigation.getNearestNavPoint(botLoc), navPoints.getRandomNavPoint()).get();
             chemin = navigation.getPathPlanner().computePath(navigation.getNearestNavPoint(botLoc), navPoints.getRandomNavPoint()).get();
-            notMovingSince=0;
             if(chemin!=null){
                 indexNavAS=0;
                 mouvement();
+                notMovingSinceIndex=System.currentTimeMillis();
                 navigatingToItem=false;
                 navigating=true;
             }
@@ -472,7 +435,7 @@ public class BotNavigation {
             //cheminAS = navigationAS.computePath(navigation.getNearestNavPoint(botLoc), navigation.getNearestNavPoint(itemLoc)).get();
             chemin = navigation.getPathPlanner().computePath(navigation.getNearestNavPoint(botLoc), navigation.getNearestNavPoint(itemLoc)).get();
             if(chemin!=null){
-                notMovingSince=0;
+                notMovingSinceIndex=System.currentTimeMillis();
                 indexNavAS=0;
                 mouvement();
                 navigatingToItem=true;

@@ -421,7 +421,7 @@ public class Bot extends UT2004BotModuleController {
     	navBot.setItem(null);
         enemy = null;
         move.stopMovement();
-        
+        navBot.stopNavigation();
         stateRunAround.setItemsToRunAround(null);
         engage.setEngage(false);
         pursue.setIsPursue(false);
