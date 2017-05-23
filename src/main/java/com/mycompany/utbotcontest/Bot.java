@@ -52,7 +52,9 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemTypeTranslator;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Configuration;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Initialize;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.KillBot;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.RemoveRay;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Respawn;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.StopShooting;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.AutoTraceRay;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.ConfigChange;
@@ -69,6 +71,7 @@ import cz.cuni.amis.pogamut.ut2004.utils.UnrealUtils;
 import cz.cuni.amis.utils.exception.PogamutException;
 import java.awt.Color;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -181,6 +184,11 @@ public class Bot extends UT2004BotModuleController {
     
     protected ILocated focus;
     
+    private boolean isLearning = false;
+    
+    private double firstTimeLearning = System.currentTimeMillis();;
+    
+    private double secondTimeLearning = 0.0;
     
     
     private void testDraw()
@@ -214,6 +222,29 @@ public class Bot extends UT2004BotModuleController {
         }
     }
     
+    
+    private boolean isLearning() throws FileNotFoundException, FileNotFoundException, IOException
+    {
+        File conf = new File("./BotConfig.txt");
+        
+        if (!conf.exists())
+        {
+            System.out.println("Pas d'infos à récupérer car le fichier n'existe pas");
+            return false;
+        }
+        FileInputStream readFile = new FileInputStream(conf);
+        String ligneTemp = "";
+        int temp;
+        while ((temp = readFile.read()) != -1)
+        {
+            if ((char) temp != '\n')
+            {
+                ligneTemp += (char) temp;
+            }
+        }
+        
+        return ligneTemp.equalsIgnoreCase("true");
+    }
     
     
     @Override
@@ -250,18 +281,22 @@ public class Bot extends UT2004BotModuleController {
                     memory.fillNavPointsFromMemory(game.getMapName(), navPoints);
                 } catch (IOException ex) {
                     Logger.getLogger(Bot.class.getName()).log(Level.SEVERE, null, ex);
+                    System.out.println("Erreur dans l'initialisation des points à supprimer !");
                 }
                 if (memory.getFromNavPoints() != null)
                 {
+                    System.out.println("taille 1 : " + memory.getFromNavPoints().size() + " taille 2 : " + memory.getToNavPoints().size());
                     for (int i = 0; i < memory.getFromNavPoints().size(); i++)
                     {
-                        navBuilder.removeEdge(memory.getFromNavPoints().get(i).getId().toString(), memory.getToNavPoints().get(i).getId().toString());
+                        System.out.println("Suppression du noeud : " + memory.getFromNavPoints().get(i).getId().getStringId() + " -> " + memory.getToNavPoints().get(i).getId().getStringId());
+                        navBuilder.removeEdge(memory.getFromNavPoints().get(i).getId().getStringId(), memory.getToNavPoints().get(i).getId().getStringId());
                     }
                 }
             }
         });
         //testAjoutNoeuds();
         fwMap.refreshPathMatrix();
+        draw.clearAll();
         testDraw();
         
     	//navMeshModule.setReloadNavMesh(true); // tells NavMesh to reconstruct OffMeshPoints    	
@@ -270,9 +305,10 @@ public class Bot extends UT2004BotModuleController {
 
     @Override
     public void botInitialized(GameInfo info, ConfigChange currentConfig, InitedMessage init) {
-        body.getConfigureCommands().setBotAppearance("HumanMaleA.EgyptMaleA");
+        //body.getConfigureCommands().setBotAppearance("HumanMaleA.EgyptMaleA");
         getInitializeCommand().setDesiredSkill(5);
         navBuilder.setUsed(true);
+        
     }
     
     @Override
@@ -291,9 +327,15 @@ public class Bot extends UT2004BotModuleController {
       
         @Override
     public void botFirstSpawn(GameInfo gameInfo, ConfigChange config, InitedMessage init, Self self) {
-
-        //meshInit = new MeshInit(this, navBot, navMeshModule, levelGeometryModule);
-
+        
+        try {
+            //meshInit = new MeshInit(this, navBot, navMeshModule, levelGeometryModule);
+            isLearning = isLearning();
+        } catch (IOException ex) {
+            Logger.getLogger(Bot.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Problème de lecture du fichier de configuration");
+        }
+        System.out.println("Le bot apprend ? " + isLearning);
         //meshInit.initSpawn(gameInfo);
         navBot = new BotNavigation(this, /*meshInit*/null);
         try {
@@ -418,6 +460,19 @@ public class Bot extends UT2004BotModuleController {
         Alea pourcentChangeArme = new Alea();
         Alea pourcentChangeComportement = new Alea();
         
+        if (isLearning)
+        {
+            secondTimeLearning = System.currentTimeMillis();
+            if ((secondTimeLearning - firstTimeLearning) >= 50000)
+            {
+                firstTimeLearning = secondTimeLearning;
+                System.out.println("Ca fait 50 seconde !");
+                getAct().act(new Respawn());
+                
+            }
+        }
+        
+        
         focus = navBot.botFocus();
         
         if (!raycasting.getAllRaysInitialized().getFlag()) {
@@ -519,6 +574,27 @@ public class Bot extends UT2004BotModuleController {
     
     @Override
     public void botKilled(BotKilled event) {
+        NavigationMemory memory = new NavigationMemory();
+        try {
+            memory.fillNavPointsFromMemory(game.getMapName(), navPoints);
+        } catch (IOException ex) {
+            Logger.getLogger(Bot.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Erreur dans l'initialisation des points à supprimer !");
+        }
+        if (memory.getFromNavPoints() != null)
+        {
+            System.out.println("taille 1 : " + memory.getFromNavPoints().size() + " taille 2 : " + memory.getToNavPoints().size());
+            for (int i = 0; i < memory.getFromNavPoints().size(); i++)
+            {
+                System.out.println("Suppression du noeud : " + memory.getFromNavPoints().get(i).getId().getStringId() + " -> " + memory.getToNavPoints().get(i).getId().getStringId());
+                navBuilder.removeEdge(memory.getFromNavPoints().get(i).getId().getStringId(), memory.getToNavPoints().get(i).getId().getStringId());
+            }
+        }
+        //testAjoutNoeuds();
+        fwMap.refreshPathMatrix();
+        draw.clearAll();
+        testDraw();
+        
         if (lastEnemy != null) {
             distanceBotTarget = Math.abs(info.getLocation().getDistance2D(lastEnemy.getLocation()));
         }
@@ -538,6 +614,11 @@ public class Bot extends UT2004BotModuleController {
         }
         comportement.setEnemyCount(0);     
     	reset();
+        
+        
+        
+
+        
     }
     
     @ObjectClassEventListener(objectClass = Self.class, eventClass = WorldObjectUpdatedEvent.class)
@@ -705,6 +786,29 @@ public class Bot extends UT2004BotModuleController {
 
     public ILocated getFocus() {
         return focus;
+    }
+    
+    public boolean getLearning()
+    {
+        return isLearning;
+    }
+    
+    public void setFirstTimeLearning(double time)
+    {
+        firstTimeLearning = time;
+    }
+    
+    public void setSecondTimeLearning(double time)
+    {
+        secondTimeLearning = time;
+    }
+
+    public double getFirstTimeLearning() {
+        return firstTimeLearning;
+    }
+
+    public double getSecondTimeLearning() {
+        return secondTimeLearning;
     }
     
     

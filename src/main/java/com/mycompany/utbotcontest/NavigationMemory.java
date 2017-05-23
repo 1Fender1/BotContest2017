@@ -119,24 +119,30 @@ navEnhanceDir + "/" + memoryName + ".txt", true));
             fromNavToString.add(tempNav[0]);
             toNavToString.add(tempNav[1]);
         }
-        
 
-        for (NavPoint navP : pointsList)
-        {
-            for (String stringNavPoint : toNavToString)
+        for (String stringNavPoint : toNavToString)
+        {   
+            for (NavPoint navP : pointsList)
             {
-                if (navP.toString().equals(stringNavPoint))
+                if (navP.getId().getStringId().equals(stringNavPoint))
                 {
                     toNavPoints.add(navP);
                 }
             }
-            for (String stringNavPoint : fromNavToString)
+        }
+        for (String stringNavPoint : fromNavToString)
+        {
+            for (NavPoint navP : pointsList)
             {
-                if (navP.toString().equals(stringNavPoint))
+                if (navP.getId().getStringId().equals(stringNavPoint))
                 {
                     fromNavPoints.add(navP);
                 }
             }
+        }
+        for (int i = 0; i < fromNavPoints.size(); i++)
+        {
+            System.out.println("NavP p" + i + " from : " + fromNavPoints.get(i).getId().getStringId() + " to : " + toNavPoints.get(i).getId().getStringId());
         }
     }
     

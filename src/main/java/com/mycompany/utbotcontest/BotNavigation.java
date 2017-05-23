@@ -2,6 +2,7 @@ package com.mycompany.utbotcontest;
 
 import cz.cuni.amis.pogamut.base.agent.navigation.IPathFuture;
 import cz.cuni.amis.pogamut.base.agent.navigation.impl.PathFuture;
+import cz.cuni.amis.pogamut.base.communication.messages.CommandMessage;
 import cz.cuni.amis.pogamut.base3d.worldview.object.ILocated;
 import cz.cuni.amis.pogamut.base3d.worldview.object.Location;
 import cz.cuni.amis.pogamut.unreal.communication.messages.UnrealId;
@@ -18,6 +19,7 @@ import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.pathfollowing.NavMes
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.stuckdetector.AccUT2004DistanceStuckDetector;
 import cz.cuni.amis.pogamut.ut2004.bot.command.AdvancedLocomotion;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.Respawn;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Item;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.NavPoint;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.NavPointNeighbourLink;
@@ -98,6 +100,7 @@ public class BotNavigation {
     private double notMovingSince;
     
     private NavigationMemory memory;
+    
     
     public BotNavigation(Bot mainBot, MeshInit meshInit)
     {
@@ -292,8 +295,20 @@ public class BotNavigation {
                             {
                                 NavPoint navPFromTemp = navPoints.getNearestNavPoint(chemin.get(indexNavAS-1));
                                 NavPoint navPToTemp = navPoints.getNearestNavPoint(chemin.get(indexNavAS));
-                                if (!navPFromTemp.isLiftCenter() && !navPFromTemp.isLiftExit() && !navPFromTemp.isLiftJumpExit() && !navPToTemp.isLiftCenter() && !navPToTemp.isLiftExit() && !navPToTemp.isLiftJumpExit())
+                                if (!navPToTemp.isLiftCenter() && !navPToTemp.isLiftExit() && !navPToTemp.isLiftJumpExit())
+                                {
                                     memory.addInfo(mainBot.getGame().getMapName(), navPoints.getNearestNavPoint(chemin.get(indexNavAS-1)).getId().getStringId(), navPoints.getNearestNavPoint(chemin.get(indexNavAS)).getId().getStringId());
+                                    if (mainBot.getLearning())
+                                    {
+                                        mainBot.setSecondTimeLearning(System.currentTimeMillis());
+                                        if ((mainBot.getSecondTimeLearning() - mainBot.getFirstTimeLearning()) >= 50000)
+                                        {
+                                            mainBot.setFirstTimeLearning(mainBot.getSecondTimeLearning());
+                                        }
+                                        System.out.println("Erreur !");
+                                        mainBot.getAct().act(new Respawn());
+                                    }
+                                }
                             }
                             if(chemin!=null && indexNavAS<chemin.size()){
                             navigation.setFocus(chemin.get(indexNavAS));

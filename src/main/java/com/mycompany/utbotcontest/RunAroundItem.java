@@ -101,13 +101,7 @@ public class RunAroundItem {
         tabooItems = new TabooSet<Item>(bot);
         
         this.knowItems = memory.getItems(mainBot.getGame().getMapName(), mainBot.getItems());
-        if (knowItems != null) 
-        {
-            for (Item it : knowItems)
-            {
-                System.out.println(it.toString());
-            }
-        }
+        
     }
     
     
