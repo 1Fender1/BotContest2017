@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /**
  *
@@ -80,6 +81,8 @@ public class BotNavigation {
     
     private float radius = 100;
     
+    private float rad = 100;
+    
     private float radiusLift = 50;
     
     private float height = 100;
@@ -87,18 +90,13 @@ public class BotNavigation {
     boolean navigatingToItem=false; 
     boolean navigating=false; 
     
-    private UT2004AStar navigationAS;
-
-    
-    List<NavPoint> cheminAS;
+    //List<NavPoint> cheminAS;
     
     private Alea alea;
     
     private AdvancedLocomotion move;
     
     private long debut=0;
-    
-    private final long tempsStrafe=700;
     
     private Raycasting raycast;
         
@@ -131,7 +129,6 @@ public class BotNavigation {
         indexNavAS=0;
         navigation.getPathExecutor().addStuckDetector(stuckDetector);
         alea = new Alea();
-        //this.meshInit = meshInit;
         memory = new NavigationMemory();
     }
     
@@ -233,27 +230,6 @@ public class BotNavigation {
                     throw new PogamutInterruptedException(e, this);
 		}	
 	}
-
-    
-    /*public boolean reachable(Item item)
-    { 
-        Location botLoc = bot.getLocation();
-        Location itemLoc = item.getLocation();
-        System.out.println("BUGGGGG");
-        if(botLoc!=null && itemLoc != null){
-            List<ILocated> chemin = navigation.getPathPlanner().computePath(navigation.getNearestNavPoint(botLoc), navigation.getNearestNavPoint(itemLoc)).get();
-            if (chemin == null)
-            {
-                tabooItems.add(item);
-                return false;
-            }
-            else
-            {   
-                return true;
-            }
-        }
-        return false;
-    }*/
     
     public void stopNavigation(){
         navigating=false;
@@ -352,7 +328,7 @@ public class BotNavigation {
                         if (!nextNavP.isInvSpot())
                         {
                             Alea rand = new Alea();
-                            if (rand.uneChanceSur(20))
+                            if (rand.uneChanceSur(40))
                             {
                                 mainBot.getMove().jump();
                             }
@@ -367,13 +343,12 @@ public class BotNavigation {
             
         }
         else{
-            //move.turnTo(chemin.get(indexNavAS));
             try{
                 NavPoint nextNavP = navPoints.getNearestNavPoint(chemin.get(indexNavAS).getLocation());
                 if (!nextNavP.isInvSpot())
                 {
                     Alea rand = new Alea();
-                    if (rand.uneChanceSur(20))
+                    if (rand.uneChanceSur(40))
                     {
                         mainBot.getMove().jump();
                     }
@@ -429,14 +404,19 @@ public class BotNavigation {
         }
         else{
             Location botLoc = bot.getLocation();
-            //cheminAS = navigationAS.computePath(navigation.getNearestNavPoint(botLoc), navPoints.getRandomNavPoint()).get();
-            chemin = navigation.getPathPlanner().computePath(navigation.getNearestNavPoint(botLoc), navPoints.getRandomNavPoint()).get();
-            if(chemin!=null){
-                indexNavAS=0;
-                mouvement();
-                notMovingSinceIndex=System.currentTimeMillis();
-                navigatingToItem=false;
-                navigating=true;
+            List<ILocated> newChemin = navigation.getPathPlanner().computePath(navigation.getNearestNavPoint(botLoc), navPoints.getRandomNavPoint()).get();
+            if(newChemin!=null){
+                if(mainBot.getVisibility().isInitialized())
+                    chemin = modifierChemin(newChemin);
+                else
+                    chemin = newChemin;
+                if(chemin != null && !chemin.isEmpty()){
+                    indexNavAS=0;
+                    mouvement();
+                    notMovingSinceIndex=System.currentTimeMillis();
+                    navigatingToItem=false;
+                    navigating=true;
+                }
             }
         }
         return true;
@@ -453,14 +433,19 @@ public class BotNavigation {
                 return false;
             Location botLoc = info.getLocation();
             Location itemLoc = neededItem.getLocation();
-            //cheminAS = navigationAS.computePath(navigation.getNearestNavPoint(botLoc), navigation.getNearestNavPoint(itemLoc)).get();
-            chemin = navigation.getPathPlanner().computePath(navigation.getNearestNavPoint(botLoc), navigation.getNearestNavPoint(itemLoc)).get();
-            if(chemin!=null){
-                notMovingSinceIndex=System.currentTimeMillis();
-                indexNavAS=0;
-                mouvement();
-                navigatingToItem=true;
-                navigating=true;
+            List<ILocated> newChemin = navigation.getPathPlanner().computePath(navigation.getNearestNavPoint(botLoc), navigation.getNearestNavPoint(itemLoc)).get();
+            if(newChemin!=null){
+                if(mainBot.getVisibility().isInitialized())
+                    chemin = modifierChemin(newChemin);
+                else
+                    chemin = newChemin;
+                if(chemin != null && !chemin.isEmpty()){
+                    notMovingSinceIndex=System.currentTimeMillis();
+                    indexNavAS=0;
+                    mouvement();
+                    navigatingToItem=true;
+                    navigating=true;
+                }
             }
             else{
                 return false;
@@ -468,6 +453,67 @@ public class BotNavigation {
         }
     	return true;
     }
+    
+    public ILocated createNewPoint(ILocated navPoint1,ILocated navPoint2){
+    if(navPoint1.getLocation().getDistanceZ(navPoint2.getLocation()) >30)
+        return null;
+    Random random = new Random();
+    ILocated halfNavPoint = navPoint1.getLocation().add(navPoint2.getLocation()).scale(0.5);
+        int randX = (int) ((random.nextInt()%rad)+25);
+        int randY = (int) ((random.nextInt()%rad)+25);
+        boolean signeX = random.nextBoolean();
+        boolean signeY = random.nextBoolean();
+        if(signeX)
+            halfNavPoint = halfNavPoint.getLocation().addX(randX);
+        else
+            halfNavPoint = halfNavPoint.getLocation().addX(-randX);
+        if(signeY)
+            halfNavPoint = halfNavPoint.getLocation().addY(randY);
+        else
+            halfNavPoint = halfNavPoint.getLocation().addY(-randY);
+    return halfNavPoint;
+}
+
+public List<ILocated> modifierChemin(List<ILocated> chemin){
+    List<ILocated> cheminLocation = new ArrayList();
+    cheminLocation.add(chemin.get(0));
+    for(int i = 1; i < chemin.size()-1; i++){
+        if(navPoints.getNearestNavPoint(chemin.get(i)).getItem() != null && navPoints.getNearestNavPoint(chemin.get(i)).isItemSpawned()){
+            cheminLocation.add(chemin.get(i));
+        }else{
+            NavPointNeighbourLink link = navPoints.getNearestNavPoint(chemin.get(i)).getIncomingEdges().get(navPoints.getNearestNavPoint(chemin.get(i-1)).getId());
+            NavPointNeighbourLink link2 = navPoints.getNearestNavPoint(chemin.get(i+1)).getIncomingEdges().get(navPoints.getNearestNavPoint(chemin.get(i)).getId());
+            if(link != null && link.getNeededJump()!=null){
+                cheminLocation.add(chemin.get(i));
+            }else if(link2 != null && link2.getNeededJump() != null){
+                cheminLocation.add(chemin.get(i));
+            }else if(navPoints.getNearestNavPoint(chemin.get(i).getLocation()).isLiftCenter() || navPoints.getNearestNavPoint(chemin.get(i).getLocation()).isLiftExit() /*|| navPoints.getNearestNavPoint(chemin.get(i).getLocation()).isLiftExit() || navPoints.getNearestNavPoint(chemin.get(i).getLocation()).isLiftJumpExit()*/){
+                cheminLocation.add(chemin.get(i));
+            }else{
+                ILocated halfNavPoint = createNewPoint(chemin.get(i-1),chemin.get(i));
+                boolean create = false;
+                int cpt = 0;
+                while(!create && cpt < 3 && halfNavPoint != null){
+                    if(mainBot.getVisibility().isVisible(cheminLocation.get(i-1),halfNavPoint)){
+                        if(Math.abs(chemin.get(i).getLocation().getDistanceZ(halfNavPoint.getLocation())) < 30){
+                            cheminLocation.add(halfNavPoint);
+                            create = true;
+                        }else{
+                            halfNavPoint = createNewPoint(chemin.get(i-1),chemin.get(i));
+                            cpt++;
+                        }
+                    }else{
+                        halfNavPoint = createNewPoint(chemin.get(i-1),chemin.get(i));
+                        cpt++;
+                    }
+                }
+                cheminLocation.add(chemin.get(i));
+            }
+        }
+    }
+    cheminLocation.add(chemin.get(chemin.size()-1));
+    return cheminLocation;
+}
   
     public Item getItem() {
         return item;
