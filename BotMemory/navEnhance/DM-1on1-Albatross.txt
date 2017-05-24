@@ -1,0 +1,11 @@
+DM-1on1-Albatross.PathNode90~DM-1on1-Albatross.JumpSpot9
+DM-1on1-Albatross.PathNode63~DM-1on1-Albatross.JumpSpot2
+DM-1on1-Albatross.PathNode90~DM-1on1-Albatross.JumpSpot9
+DM-1on1-Albatross.PathNode63~DM-1on1-Albatross.JumpSpot2
+DM-1on1-Albatross.InventorySpot341~DM-1on1-Albatross.PathNode24
+DM-1on1-Albatross.JumpSpot12~DM-1on1-Albatross.InventorySpot333
+DM-1on1-Albatross.PathNode63~DM-1on1-Albatross.JumpSpot2
+DM-1on1-Albatross.PathNode97~DM-1on1-Albatross.JumpSpot10
+DM-1on1-Albatross.PathNode44~DM-1on1-Albatross.PathNode37
+DM-1on1-Albatross.PathNode90~DM-1on1-Albatross.JumpSpot9
+DM-1on1-Albatross.PathNode53~DM-1on1-Albatross.InventorySpot318

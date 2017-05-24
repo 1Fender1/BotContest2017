@@ -13,6 +13,7 @@ import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbcommands.StopShooting;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Player;
 import cz.cuni.amis.pogamut.ut2004.utils.UnrealUtils;
+import java.io.IOException;
 import java.util.Random;
 
 /**
@@ -49,6 +50,8 @@ public class Engage {
     
     private double longueurStrafe = UnrealUtils.CHARACTER_COLLISION_RADIUS * 10;
     
+    private boolean isEngage = false;
+    
     public Engage(Bot mainBot, BotNavigation navBot)
     {
         this.mainBot = mainBot;
@@ -79,7 +82,7 @@ public class Engage {
     }
     
     
-    public Player stateEngage() {
+    public Player stateEngage() throws IOException {
         //log.info("Decision is: ENGAGE");
         //config.setName("Hunter [ENGAGE]");
         bot.getBotName().setInfo("ENGAGE");
@@ -103,51 +106,50 @@ public class Engage {
 
         // 2) stop shooting if enemy is not visible
         if (!enemy.isVisible()) {
-	        if (info.isShooting() || info.isSecondaryShooting()) {
-                // stop shooting
+            if (info.isShooting() || info.isSecondaryShooting()) {
                 mainBot.getAct().act(new StopShooting());
             }
             runningToPlayer = false;
         } else {
+            /*navBot.setNavigating(false);
+            navBot.setNavigatingToItem(false);*/
             // 2) or shoot on enemy if it is visible
             distance = info.getLocation().getDistance(enemy.getLocation());
-            if (mainBot.getShoot().shoot(weaponPrefs, enemy) != null) {
-                log.info("Shooting at enemy!!!");
-                shooting = true;
-                int movement = random.nextInt(3);
-                
-                //0 -> strafeLeft
-                //1 -> strafeRight
-                //2 -> jump
-                switch(movement){
-                    case 0: if(mainBot.getLeft90()) 
-                                mainBot.getMove().strafeRight(longueurStrafe,enemy.getLocation());
-                            else
-                                mainBot.getMove().strafeLeft(longueurStrafe,enemy.getLocation());
-                            break;
-                    case 1: if(mainBot.getRight90())
-                                mainBot.getMove().strafeLeft(longueurStrafe,enemy.getLocation());
-                            else
-                                mainBot.getMove().strafeRight(longueurStrafe,enemy.getLocation());
-                            break;
-                    case 2: int randX = (random.nextInt()%250) + 25;
-                            int randY = (random.nextInt()%250) + 25;
-                            boolean signeX = random.nextBoolean();
-                            boolean signeY = random.nextBoolean();
-                            Location loc = info.getLocation();
-                            if(signeX)
-                                loc.setX((double)randX);
-                            else
-                                loc.setX((double)-randX);
-                            if(signeY)
-                                loc.setY((double)randY);
-                            else
-                                loc.setY((double)-randY);
-                            mainBot.getMove().moveTo(loc);
-                            mainBot.getMove().jump();
-                            break;
-                    default: break;
-                }
+            mainBot.getShoot().shoot(enemy);
+            log.info("Shooting at enemy!!!");
+            shooting = true;
+            int movement = random.nextInt(3);
+            //0 -> strafeLeft
+            //1 -> strafeRight
+            //2 -> jump
+            switch(movement){
+                case 0: if(mainBot.getLeft90()) 
+                            mainBot.getMove().strafeRight(longueurStrafe,enemy.getLocation());
+                        else
+                            mainBot.getMove().strafeLeft(longueurStrafe,enemy.getLocation());
+                        break;
+                case 1: if(mainBot.getRight90())
+                            mainBot.getMove().strafeLeft(longueurStrafe,enemy.getLocation());
+                        else
+                            mainBot.getMove().strafeRight(longueurStrafe,enemy.getLocation());
+                        break;
+                case 2: int randX = (random.nextInt()%250) + 25;
+                        int randY = (random.nextInt()%250) + 25;
+                        boolean signeX = random.nextBoolean();
+                        boolean signeY = random.nextBoolean();
+                        Location loc = info.getLocation();
+                        if(signeX)
+                            loc.setX((double)randX);
+                        else
+                            loc.setX((double)-randX);
+                        if(signeY)
+                            loc.setY((double)randY);
+                        else
+                            loc.setY((double)-randY);
+                        mainBot.getMove().moveTo(loc);
+                        mainBot.getMove().jump();
+                        break;
+                default: break;
             }
         }
 
@@ -155,16 +157,28 @@ public class Engage {
         int decentDistance = Math.round(random.nextFloat() * 800) + 200;
         if (!enemy.isVisible() || !shooting || decentDistance < distance) {
             if (!runningToPlayer) {
-                navBot.navigate(enemy);
-                runningToPlayer = true;
+                if (distance > 1500) {
+                    navBot.navigate(enemy);
+                    runningToPlayer = true;
+                }                
             }
         } else {
             runningToPlayer = false;
-            mainBot.getNavigation().stopNavigation();
+            navBot.setNavigating(false);
+            navBot.setNavigatingToItem(false);
         }
         
         navBot.setItem(null);
         return enemy;
+    }
+
+    public boolean isEngage() {
+        return isEngage;
+    }
+    
+    public void setEngage(boolean engage)
+    {
+        isEngage = engage;
     }
     
     

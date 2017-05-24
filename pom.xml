@@ -6,6 +6,7 @@
 		<groupId>cz.cuni.amis.pogamut.ut2004</groupId>
 		<artifactId>pogamut-ut2004-bot-pom</artifactId>
 		<version>3.7.0</version>
+		<relativePath>../../../Poms/PogamutUT2004BotPom/pom.xml</relativePath>
 	</parent>
 
 	<groupId>com.mycompany</groupId>
@@ -19,7 +20,7 @@
 	<properties>
 		<bot.main.class>com.mycompany.utbotcontest.RaycastingBot</bot.main.class>
 	</properties>
-
+	
 	<repositories>
 		<repository>
 			<id>amis-artifactory</id>
@@ -47,5 +48,10 @@
             <version>3.7.0</version>
             <type>jar</type>
         </dependency>
+		<dependency>
+			<groupId>cz.cuni.amis.pogamut.ut2004</groupId>
+			<artifactId>ut2004-hide-and-seek</artifactId>
+			<version>3.7.0</version>
+		</dependency>
     </dependencies>
 </project>

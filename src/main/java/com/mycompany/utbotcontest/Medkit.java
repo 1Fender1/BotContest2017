@@ -13,6 +13,7 @@ import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.UT2004ItemType;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Item;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Player;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -51,6 +52,8 @@ public class Medkit {
     private boolean runningToPlayer;
     
     private RunAroundItem runAround;
+    
+    private boolean isHeal = false;
 
     public Medkit(Bot mainBot, BotNavigation navBot, RunAroundItem runAround)
     {
@@ -84,59 +87,27 @@ public class Medkit {
     }
     
 
-    protected void stateMedKit() {
+    protected void stateMedKit() throws IOException {
         //log.info("Decision is: MEDKIT");
         Item item = items.getPathNearestSpawnedItem(ItemType.Category.HEALTH);
         if (item == null) {
-        	log.warning("NO HEALTH ITEM TO RUN TO => ITEMS");
-                runAround.stateRunAroundItems();
+            log.warning("NO HEALTH ITEM TO RUN TO => ITEMS");
+            runAround.stateRunAroundItems();
         } else {
-        	bot.getBotName().setInfo("MEDKIT");
-                navBot.navigate(item);
-        	navBot.setItem(item);
-        }
+            bot.getBotName().setInfo("MEDKIT");
+            navBot.setItem(item);
+            navBot.navigate(item);
+    }
+    }
+
+    public boolean isHeal() {
+        return isHeal;
     }
     
-    protected void stateRepli() {
-        List<Item> listeHealth = new ArrayList<Item>();
-        Item it = null;
-        for (Iterator i = items.getAllItems(ItemType.Category.HEALTH).entrySet().iterator(); i.hasNext();) {
-            Map.Entry couple = (Map.Entry)i.next();
-            it = (Item) couple.getValue();
-            listeHealth.add(it);
-        }
-        //weaponry.changeWeapon(UT2004ItemType.SHIELD_GUN);
+    public void setIsHeal(boolean heal)
+    {
+        isHeal = heal;
     }
     
-    protected void stateFuite() {
-        Item hp = null;
-        Item armor = null;
-        double distanceH;
-        double distanceA;
-        bot.getBotName().setInfo("FUITE");
-        hp = items.getNearestSpawnedItem(ItemType.Category.HEALTH);
-        armor = items.getNearestSpawnedItem(ItemType.Category.ARMOR);
-        if (armor == null) {
-            navBot.navigate(hp);
-            navBot.setItem(hp);
-        }
-        else {
-            distanceH = info.getLocation().getDistance(hp.getLocation());
-            distanceA = info.getLocation().getDistance(armor.getLocation());
-            if (distanceA < distanceH && info.getArmor() <= 150 && hp != null) {
-                if (info.getArmor() >= 50 && armor.getAmount() == 50) {
-                    armor = items.getNearestSpawnedItem(UT2004ItemType.SUPER_SHIELD_PACK);
-                }
-                navBot.navigate(armor);
-                navBot.setItem(armor);
-            }
-            else {
-                navBot.navigate(hp);
-                navBot.setItem(hp);
-            }
-        }
-        mainBot.setEngage(true);
-        mainBot.setPursue(true);
-    }
     
 }

@@ -11,21 +11,23 @@ import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Game;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.Items;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.NavPoints;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensor.WeaponPrefs;
+import cz.cuni.amis.pogamut.ut2004.agent.module.utils.TabooSet;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.NavigationState;
 import cz.cuni.amis.pogamut.ut2004.agent.navigation.navmesh.pathfollowing.NavMeshNavigation;
 import cz.cuni.amis.pogamut.ut2004.bot.impl.UT2004Bot;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType;
-import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType.Category;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.UT2004ItemType;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Item;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.GameInfo;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.GameInfo.GameInfoUpdate;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.NavPointNeighbourLink;
 import cz.cuni.amis.pogamut.ut2004.utils.UnrealUtils;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 
 /**
  *
@@ -65,7 +67,13 @@ public class RunAroundItem {
     
     private final double tauxProbaArme = 0.5;
     
-    public RunAroundItem(Bot mainBot, BotNavigation navBot)
+    private MapMemory memory = new MapMemory();
+    
+    private List<Item> knowItems;
+    
+    TabooSet<Item> tabooItems;
+    
+    public RunAroundItem(Bot mainBot, BotNavigation navBot) throws IOException
     {
         this.mainBot = mainBot;
         
@@ -90,6 +98,11 @@ public class RunAroundItem {
         this.log = mainBot.getLog();
         
         this.probaA = mainBot.getProbaArmes();
+        
+        tabooItems = new TabooSet<Item>(bot);
+        
+        this.knowItems = memory.getItems(mainBot.getGame().getMapName(), mainBot.getItems());
+        
     }
     
     
@@ -233,12 +246,12 @@ public class RunAroundItem {
               d++;
             }
         }
-        System.out.println("Armes:   "+w);
+        /*System.out.println("Armes:   "+w);
         System.out.println("Vie:   "+h);
         System.out.println("armure:   "+a);
         System.out.println("munition:   "+am);
         System.out.println("adrenaline:   "+ad);
-        System.out.println("damage:   "+d);
+        System.out.println("damage:   "+d); */
       }
       
       ////////////////////////
@@ -401,7 +414,7 @@ public class RunAroundItem {
         //2 Armors
         //3 Ammos
         //4 UDammage
-        System.out.println("+++++++TypeItem : "+ typeItem + "+++++++++++");
+        //System.out.println("+++++++TypeItem : "+ typeItem + "+++++++++++");
         
         switch (typeItem)
         {
@@ -462,33 +475,90 @@ public class RunAroundItem {
         return null;        
     }
     
-
+    //retire de la liste 1 les éléments non présent dans la liste 2
+    private List<Item> filtrerSupprElem (List<Item> liste1,List<Item> liste2)
+    {
+        List<Item> listeRes = new ArrayList<Item>();
+        for (Item item : liste1)
+        {
+            if (liste2.contains(item))
+            {
+                listeRes.add(item);
+            }
+        }
+        return listeRes;
+    }
+    
+    private void addNewItems() throws IOException
+    {
+        if (knowItems == null)
+        {
+            knowItems = new ArrayList<Item>();
+        }
+        List<Item> visibleItems = new ArrayList<Item>();
+        for (Entry<UnrealId, Item> item : items.getAllItems().entrySet())
+        {
+            if (mainBot.getInfo().isFacing(item.getValue().getLocation(), 45))
+            {
+                visibleItems.add(item.getValue());
+            }
+        }
+        
+        for (Item item : visibleItems)
+        {
+            if (!knowItems.contains(item) && !item.isDropped())
+            {
+                memory.addInfo(mainBot.getGame().getMapName(), item.getId().toString());
+                knowItems.add(item);
+            }
+        }
+    }
+    
+    public void copySetToList(Set s, List l){
+        Object[] tab=s.toArray();
+        l.clear();
+        for(int i =0; i<s.size(); i++){
+            l.add(tab[i]);
+        }
+    }
+    
     ////////////////////////////
     // STATE RUN AROUND ITEMS //
     ////////////////////////////
 protected List<Item> itemsToRunAround = null;
 
-    protected void stateRunAroundItems() {
+    protected void stateRunAroundItems() throws IOException {
         //log.info("Decision is: ITEMS");
         //config.setName("Hunter [ITEMS]");
+        addNewItems();
+        
         if (navBot.isNavigatingToItem() && navBot.getItem() != null)
         {
             bot.getBotName().setInfo("ITEM: " + navBot.getItem().getType().getName() + "");
-            navBot.navigate();
+            if(navBot.isStuck()){
+                log.info("ADD TABOO: " + navBot.getItem().getType().getName());
+                tabooItems.add(navBot.getItem(), 120);
+            }
         }
         else
         {
             bot.getBotName().setInfo("RUN AROUND ITEM");
             navBot.navigate();
         }
-       
-        if (navBot.isNavigatingToItem()) return;
+        
+        if (navBot.isNavigatingToItem()) 
+        {
+            return;
+        }
+            
         
         List<Item> interesting = new ArrayList<Item>();
         
         // ADD WEAPONS
         for (ItemType itemType : ItemType.Category.WEAPON.getTypes()) {
-        	if (!weaponry.hasLoadedWeapon(itemType)) 
+        	if (!weaponry.hasLoadedWeapon(itemType))
+                    
+                    //interesting.addAll(items.getKnownPickups(itemType).values());
                     interesting.addAll(items.getSpawnedItems(itemType).values());
         }
         
@@ -496,25 +566,34 @@ protected List<Item> itemsToRunAround = null;
         for (ItemType itemType : ItemType.Category.ARMOR.getTypes()) {
             if (info.getArmor() < game.getMaxLowArmor())
             {
+                //interesting.addAll(items.getKnownPickups(itemType).values());
                 interesting.addAll(items.getSpawnedItems(itemType).values());
             }
             else if (info.getArmor() < game.getMaxArmor())
             {
+                //interesting.addAll(items.getKnownPickups(UT2004ItemType.SUPER_SHIELD_PACK).values());
+                //interesting.addAll(items.getAllItems(UT2004ItemType.SUPER_SHIELD_PACK).values());
                 interesting.addAll(items.getSpawnedItems(UT2004ItemType.SUPER_SHIELD_PACK).values());
             }
         }
         // ADD QUADS
+        //interesting.addAll(items.getKnownPickups(UT2004ItemType.U_DAMAGE_PACK).values());
+        //interesting.addAll(items.getAllItems(UT2004ItemType.U_DAMAGE_PACK).values());
         interesting.addAll(items.getSpawnedItems(UT2004ItemType.U_DAMAGE_PACK).values());
         
         // ADD HEALTHS
         for (ItemType itemType : ItemType.Category.HEALTH.getTypes())
         {
             if (info.getHealth() < 100) {
+                //interesting.addAll(items.getKnownPickups(itemType).values());
+                //interesting.addAll(items.getAllItems(itemType).values());
         	interesting.addAll(items.getSpawnedItems(itemType).values());
             }
             else if (info.getHealth() >= 100 && info.getHealth() < game.getMaxHealth())
-            {
-                interesting.addAll(items.getSpawnedItems(UT2004ItemType.MINI_HEALTH_PACK).values());
+            {   
+                //interesting.addAll(items.getKnownPickups(UT2004ItemType.MINI_HEALTH_PACK).values());
+                //interesting.addAll(items.getAllItems(UT2004ItemType.MINI_HEALTH_PACK).values());
+               interesting.addAll(items.getSpawnedItems(UT2004ItemType.MINI_HEALTH_PACK).values());
             }
         }
         
@@ -522,10 +601,13 @@ protected List<Item> itemsToRunAround = null;
         for (ItemType itemType : ItemType.Category.AMMO.getTypes())
         {
             if (weaponry.hasLoadedWeapon(weaponry.getWeaponForAmmo(itemType)) && (weaponry.getAmmo(itemType) < weaponry.getMaxAmmo(itemType)))
+                //interesting.addAll(items.getKnownPickups(itemType).values());
+                //interesting.addAll(items.getAllItems(itemType).values());
                 interesting.addAll(items.getSpawnedItems(itemType).values());
         }
         
-       // Item item = MyCollections.getRandom(tabooItems.filter(interesting));
+       //Item item = MyCollections.getRandom(tabooItems.filter(interesting));
+       copySetToList(tabooItems.filter(interesting),interesting);
        Item item = null;
        item = existNearInterstingItem(interesting);
        navBot.setItem(item);
@@ -536,11 +618,6 @@ protected List<Item> itemsToRunAround = null;
             listHealth.clear(); listWeapon.clear(); listArmor.clear(); listAmmo.clear();
             navBot.setItem(item);
        }
-       else
-       {
-           System.out.println("Je vais chercher l'item le plus proche !");
-       }
-       
        
        min = 0; damage = null; /*indice = 0;
        for(int i =0; i<5; i++){
@@ -553,14 +630,14 @@ protected List<Item> itemsToRunAround = null;
         	bot.getBotName().setInfo("RANDOM NAV");
                 navBot.navigate();
         } else {
-            /*for(Map.Entry<UnrealId, NavPointNeighbourLink> entry : item.getNavPoint().getIncomingEdges().entrySet()){
-                //navBuilder.modifyNavPoint(entry.getValue().getFromNavPoint().getId().getStringId()).removeEdgeTo("DM-1on1-Irondust.PathNode28");
-                mainBot.getNavBuilder().removeEdge(item.getNavPointId().getStringId(),entry.getValue().getFromNavPoint().getId().getStringId());
-            }*/
-            navBot.setItem(item);
-            log.info("RUNNING FOR: " + item.getType().getName());
-            bot.getBotName().setInfo("ITEM: " + item.getType().getName() + "");
-            navBot.navigate(item);
+        	navBot.setItem(item);
+        	log.info("RUNNING FOR: " + item.getType().getName());
+        	bot.getBotName().setInfo("ITEM: " + item.getType().getName() + "");
+                navBot.navigate(item);
+                if(!navBot.navigate(item)){
+                log.info("ADD TABOO: " + item.getType().getName());
+                tabooItems.add(item, 180);
+            }
         }        
     }
 

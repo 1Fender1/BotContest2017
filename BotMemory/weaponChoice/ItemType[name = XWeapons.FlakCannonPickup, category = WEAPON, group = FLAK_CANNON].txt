@@ -1,0 +1,1 @@
+ItemType[name = XWeapons.FlakCannonPickup, category = WEAPON, group = FLAK_CANNON];0.4666666666666666;2.0;0;1;50.0;1800.0

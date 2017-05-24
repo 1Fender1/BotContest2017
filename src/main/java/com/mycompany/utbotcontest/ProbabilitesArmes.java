@@ -18,7 +18,11 @@ package com.mycompany.utbotcontest;
 
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weapon;
 import cz.cuni.amis.pogamut.ut2004.agent.module.sensomotoric.Weaponry;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.ItemType;
 import cz.cuni.amis.pogamut.ut2004.communication.messages.UT2004ItemType;
+import cz.cuni.amis.pogamut.ut2004.communication.messages.gbinfomessages.Item;
+import cz.cuni.amis.pogamut.ut2004.communication.translator.itemdescriptor.WeaponDescriptor;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -33,18 +37,25 @@ import java.util.Random;
  * @author Romain
  */
 public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
+    private Bot mainBot;
     private UT2004ItemType nom;
     private double probabilite;
     private double poids;
     private int nbVictoire;
     private int nbDefaite;
+    private int firingMode;
+    private double distanceInf;
+    private double distanceSup;
+    private WeaponMemory memory = new WeaponMemory();
     
-    public ProbabilitesArmes(UT2004ItemType nom, double proba, double poids, int nbV, int nbD) {
+    public ProbabilitesArmes(UT2004ItemType nom, double proba, double poids, int nbV, int nbD, double dI, double dS) {
         this.nom = nom;
         this.probabilite = proba;
         this.poids = poids;
         this.nbVictoire = nbV;
         this.nbDefaite = nbD;
+        this.distanceInf = dI;
+        this.distanceSup = dS;
     }
     public static List<ProbabilitesArmes> referencesArmes = new ArrayList<ProbabilitesArmes>();
     public static List<ProbabilitesArmes> inventaireArmes = new ArrayList<ProbabilitesArmes>();
@@ -54,16 +65,17 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
     private int max_value = 100;
     private int sizeInventaire = 0;
     
-    public void initProbabilitesA() {
-        ProbabilitesArmes rocket = new ProbabilitesArmes(UT2004ItemType.ROCKET_LAUNCHER, 0.7, 1, 0, 0);
-        ProbabilitesArmes flak = new ProbabilitesArmes(UT2004ItemType.FLAK_CANNON, 0.7, 2, 0, 0);
-        ProbabilitesArmes lightning = new ProbabilitesArmes(UT2004ItemType.LIGHTNING_GUN, 0.7, 2, 0, 0);
-        ProbabilitesArmes minigun = new ProbabilitesArmes(UT2004ItemType.MINIGUN, 0.6, 3, 0, 0);
-        ProbabilitesArmes link = new ProbabilitesArmes(UT2004ItemType.LINK_GUN, 0.6, 4, 0, 0);
-        ProbabilitesArmes assault = new ProbabilitesArmes(UT2004ItemType.ASSAULT_RIFLE, 0.5, 5, 0, 0);
-        ProbabilitesArmes shock = new ProbabilitesArmes(UT2004ItemType.SHOCK_RIFLE, 0.4, 5, 0, 0);
-        ProbabilitesArmes bio = new ProbabilitesArmes(UT2004ItemType.BIO_RIFLE, 0.4, max_value, 0, 0);
-        ProbabilitesArmes shield = new ProbabilitesArmes(UT2004ItemType.SHIELD_GUN, 0,max_value, 0, 0);
+    //INITIALISATION DES PROBABILITES SELON LES ARMES
+    public void initProbabilitesA() throws IOException {
+        ProbabilitesArmes rocket = memory.getProba(UT2004ItemType.ROCKET_LAUNCHER.toString());
+        ProbabilitesArmes flak = memory.getProba(UT2004ItemType.FLAK_CANNON.toString());
+        ProbabilitesArmes lightning = memory.getProba(UT2004ItemType.LIGHTNING_GUN.toString());
+        ProbabilitesArmes minigun = memory.getProba(UT2004ItemType.MINIGUN.toString());
+        ProbabilitesArmes link = memory.getProba(UT2004ItemType.LINK_GUN.toString());
+        ProbabilitesArmes assault = memory.getProba(UT2004ItemType.ASSAULT_RIFLE.toString());
+        ProbabilitesArmes shock = memory.getProba(UT2004ItemType.SHOCK_RIFLE.toString());
+        ProbabilitesArmes bio = memory.getProba(UT2004ItemType.BIO_RIFLE.toString());
+        ProbabilitesArmes shield = memory.getProba(UT2004ItemType.SHIELD_GUN.toString());
         referencesArmes.add(rocket);
         referencesArmes.add(flak);
         referencesArmes.add(lightning);
@@ -75,51 +87,7 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
         referencesArmes.add(shield);
         Collections.sort(referencesArmes);
         Collections.reverse(referencesArmes);
-    }
-    
-    //GETTER  
-    public UT2004ItemType getNom() {
-        return this.nom;
-    }
-    public double getProbabilite() {
-        return this.probabilite;
-    }
-    public double getPoids() {
-        return this.poids;
-    }
-    public int getNbVictoire() {
-        return this.nbVictoire;
-    }
-    public int getNbDefaite() {
-        return this.nbDefaite;
-    }
-    
-    public void setSize(int nb) {
-        this.sizeInventaire = nb;
-    }
-    
-    //INCREMENTE LE NOMBRE DE VICTOIRE DE L'ARME
-    public void nbVIncrement(String weapon) {
-        int index = 0;
-        Iterator<ProbabilitesArmes> it = referencesArmes.iterator();
-        while (it.hasNext() && !it.next().nom.getGroup().getName().equals(weapon)) {
-            index++;
-        }
-        ProbabilitesArmes update = referencesArmes.get(index);
-        update.nbVictoire++;
-        referencesArmes.set(index, update);
-    }
-    
-    //INCREMENTE LE NOMBRE DE DEFAITE DE L'ARME
-    public void nbDIncrement(String weapon) {
-        int index = 0;
-        Iterator<ProbabilitesArmes> it = referencesArmes.iterator();
-        while (it.hasNext() && !it.next().nom.getGroup().getName().equals(weapon)) {
-            index++;
-        }
-        ProbabilitesArmes update = referencesArmes.get(index);
-        update.nbDefaite++;
-        referencesArmes.set(index, update);
+        //affichageListe();
     }
     
     @Override
@@ -128,19 +96,51 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
         return info;
     }
     
+    public String toStringForMemory() {
+        return nom + ";" + probabilite+ ";" + poids + ";" + nbVictoire + ";" + nbDefaite + ";" + distanceInf + ";" + distanceSup;
+    }
+    
     @Override
     public int compareTo(ProbabilitesArmes o) {
         return new Double(probabilite).compareTo(o.probabilite);
     }
     
-    public void affichageInventaire() {
+    //INCREMENTE LE NOMBRE DE VICTOIRE DE L'ARME
+    protected void nbVIncrement(String weapon) throws IOException {
+        int index = 0;
+        Iterator<ProbabilitesArmes> it = referencesArmes.iterator();
+        while (it.hasNext() && !it.next().nom.getGroup().getName().equals(weapon)) {
+            index++;
+        }
+        ProbabilitesArmes update = referencesArmes.get(index);
+        update.nbVictoire++;
+        referencesArmes.set(index, update);
+        memory.addInfo(update.getNom().toString(), update.toStringForMemory());
+    }
+    
+    //INCREMENTE LE NOMBRE DE DEFAITE DE L'ARME
+    protected void nbDIncrement(String weapon) throws IOException {
+        int index = 0;
+        Iterator<ProbabilitesArmes> it = referencesArmes.iterator();
+        while (it.hasNext() && !it.next().nom.getGroup().getName().equals(weapon)) {
+            index++;
+        }
+        ProbabilitesArmes update = referencesArmes.get(index);
+        update.nbDefaite++;
+        referencesArmes.set(index, update);
+        memory.addInfo(update.getNom().toString(), update.toStringForMemory());
+    }
+    
+    //AFFICHAGE DE L'INVENTAIRE DU BOT
+    protected void affichageInventaire() {
        Iterator<ProbabilitesArmes> it = inventaireArmes.iterator(); 
        while (it.hasNext()) {
            System.out.println("INVENTAIRE DU BOT = " + it.next());
        }
     }
     
-    public int indexWeapon (String Weapon) {
+    //RETOURNE L'INDEX DE L'ARME
+    protected int indexWeapon (String Weapon) {
         int index = 0;
         Iterator<ProbabilitesArmes> it = referencesArmes.iterator();
         while (it.hasNext() && !it.next().nom.getGroup().getName().equals(Weapon)) {
@@ -149,7 +149,8 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
         return index;
     }
     
-    public void inventaireBot(Weaponry w) {
+    //INVENTAIRE DU BOT
+    protected void inventaireBot(Weaponry w) {
         List<ProbabilitesArmes> list = new ArrayList<ProbabilitesArmes>(new LinkedHashSet<ProbabilitesArmes>());
         Weapon wp = null;
         int index = 0;
@@ -168,7 +169,7 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
     }
     
     //CHOIX DE L'ARME
-    public UT2004ItemType choixArme(Weaponry w) {
+    protected UT2004ItemType choixArme(Weaponry w) {
         double randNumber = Math.random();
         ProbabilitesArmes pa = null;
         Random r = new Random();
@@ -181,29 +182,92 @@ public class ProbabilitesArmes implements Comparable<ProbabilitesArmes> {
         }
         if (randNumber < epsilon) {
             randomWeapon = r.nextInt(w.getWeapons().size());
-            System.out.println("ARME AU HASARD = " + pa);
+            //System.out.println("ARME AU HASARD = " + pa);
             pa = inventaireArmes.get(randomWeapon);
         }
         else {
-           affichageInventaire();
+           //affichageInventaire();
            Collections.sort(inventaireArmes);
            Collections.reverse(inventaireArmes);
            pa = inventaireArmes.get(0);
-           System.out.println("MEILLEURE ARME = " + pa);
+           //System.out.println("MEILLEURE ARME = " + pa);
         }
         return pa.nom;
     }
     
     //MAJ PROBABILITE DE L'ARME
-    public void updateProba(String weapon) {
+    protected void updateProba(String weapon) throws IOException {
         ProbabilitesArmes pa;
-        double newP;
+        double variation = 0;
         int index = 0;
+        int var = 0;
+        boolean horsBorne = false;
+        boolean dInf = false;
+        double d = mainBot.getDistanceBotTarget();
         Iterator<ProbabilitesArmes> it = referencesArmes.iterator();
         while (it.hasNext() && !it.next().nom.getGroup().getName().equals(weapon)) {
             index++;
         }
-        referencesArmes.get(index).probabilite = (referencesArmes.get(index).probabilite * referencesArmes.get(index).poids + referencesArmes.get(index).nbVictoire) / (referencesArmes.get(index).poids + referencesArmes.get(index).nbVictoire + referencesArmes.get(index).nbDefaite);
+        if (d < referencesArmes.get(index).distanceInf) {
+            horsBorne = true;
+            dInf = true;
+        }
+        if (d > referencesArmes.get(index).distanceSup) {
+            horsBorne = true;
+            dInf = false;
+        }
+        variation = valDistanceBorne(dInf, d);
+        if (horsBorne) {
+            referencesArmes.get(index).probabilite = (referencesArmes.get(index).probabilite * referencesArmes.get(index).poids + referencesArmes.get(index).nbVictoire) / (referencesArmes.get(index).poids + referencesArmes.get(index).nbVictoire + referencesArmes.get(index).nbDefaite + variation);
+        }
+        else {
+            referencesArmes.get(index).probabilite = (referencesArmes.get(index).probabilite * referencesArmes.get(index).poids + referencesArmes.get(index).nbVictoire) / (referencesArmes.get(index).poids + referencesArmes.get(index).nbVictoire + referencesArmes.get(index).nbDefaite);
+        }
+        memory.addInfo(referencesArmes.get(index).getNom().toString(), referencesArmes.get(index).toStringForMemory());
+    }
+    
+    //DIFFERENCE ENTRE LA DISTANCE ET LA BORNE
+    protected double valDistanceBorne(boolean inf, double distance) {
+        double delta = 0;
+        double deltaFinal = 0;
+        if (inf) {
+            delta = Math.abs(distance - distanceInf);
+        }
+        else {
+            delta = Math.abs(distance - distanceSup);
+        }
+        deltaFinal = delta / (distanceInf + distanceSup);
+        return deltaFinal;
+    }
+
+    //GETTER  
+    public UT2004ItemType getNom() {
+        return this.nom;
+    }
+    
+    public double getProbabilite() {
+        return this.probabilite;
+    }
+    
+    public double getPoids() {
+        return this.poids;
+    }
+    
+    public int getNbVictoire() {
+        return this.nbVictoire;
+    }
+    
+    public int getNbDefaite() {
+        return this.nbDefaite;
+    }
+    
+    //SETTERS
+    public void setSize(int nb) {
+        this.sizeInventaire = nb;
+    }
+    
+    public void setMainBot(Bot mB) {
+        this.mainBot = mB;
     }
     
 }

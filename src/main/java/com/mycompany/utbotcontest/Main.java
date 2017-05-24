@@ -1,23 +1,10 @@
-/*
- * Copyright (C) 2017 AMIS research group, Faculty of Mathematics and Physics, Charles University in Prague, Czech Republic
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
 package com.mycompany.utbotcontest;
 
 import cz.cuni.amis.pogamut.ut2004.utils.UT2004BotRunner;
 import cz.cuni.amis.utils.exception.PogamutException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  *
@@ -25,32 +12,236 @@ import cz.cuni.amis.utils.exception.PogamutException;
  */
 public class Main {
     
+        private final String host = "-host";
+        private final String port = "-p";
+        private final String nomv = "-nomv";
+        private final String help = "-h";
+    
+    
+        private void printUsage()
+        {
+            System.out.println("Use : ");
+            System.out.println(help + " for more usage");
+            System.out.println(nomv);
+            System.out.println("[" + host + "]" + "[" + nomv + "]");
+            System.out.println("[" + host + "]" + " host " + "[" + port + "]" + " port " + "[" + nomv + "]");
+        }
+    
+    
+    
+        public boolean isArgsOk(String args[])
+        {
+            boolean containPort = false;
+            boolean containHost = false;
+            boolean containNomv = false;
+            boolean containHelp = false;
+            
+            if (args.length > 5)
+            {
+                printUsage();
+                return false;
+            }
+            
+            List<String> arguments = new ArrayList<String>();
+            arguments.addAll(Arrays.asList(args));
+            
+            containPort = arguments.contains(port);
+            containHost = arguments.contains(host);
+            containNomv = arguments.contains(nomv);
+            containHelp = arguments.contains(help);
+            
+            try{
+                if (containPort)
+                {
+                    String temp = arguments.get(arguments.lastIndexOf(port) + 1);
+                    if (containPort && (temp.equals(host) || temp.equals(port) || temp.equals(nomv) || temp.equals(help)))
+                    {
+                        printUsage();
+                        return false;
+                    }
+                }
+                if (containHost)
+                {
+                    String temp = arguments.get(arguments.lastIndexOf(host) + 1);
+                    if (containHost && (temp.equals(host) || temp.equals(port) || temp.equals(nomv) || temp.equals(help)))
+                    {
+                        printUsage();
+                        return false;
+                    }
+                }
+            }catch(IndexOutOfBoundsException e)
+            {
+                printUsage();
+                return false;
+            }
+            
+            if (containHelp && args.length > 1)
+            {
+                printUsage();
+                return false;
+            }
+            
+            if (containNomv && !args[args.length-1].equals(nomv))
+            {
+                printUsage();
+                return false;
+            }
+            
+            if (containPort && !containHost)
+            {
+                printUsage();
+                return false;
+            }
+
+            
+           return true;
+        }
+        
+        public String getHost(String args[])
+        {
+            List<String> arguments = new ArrayList<String>();
+            arguments.addAll(Arrays.asList(args));
+            
+            if (!arguments.contains(host))
+                return null;
+            else
+            {
+                for (int i = 0; i < arguments.size(); i++)
+                {
+                    if (arguments.get(i).equals(host))
+                    {
+                        try
+                        {
+                            return arguments.get(i+1);
+                        }
+                        catch (IndexOutOfBoundsException e)
+                        {
+                            printUsage();
+                            return null;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+        
+        public int getPort(String args[])
+        {
+            List<String> arguments = new ArrayList<String>();
+            arguments.addAll(Arrays.asList(args));
+            
+            if (!arguments.contains(port))
+                return -1;
+            else
+            {
+                for (int i = 0; i < arguments.size(); i++)
+                {
+                    if (arguments.get(i).equals(port))
+                    {
+                        try
+                        {
+                            int port = Integer.parseInt(arguments.get(i + 1));
+                            return port;
+                        }
+                        catch (NumberFormatException e)
+                        {
+                            System.out.println("Invalid port. Expecting numeric. Resuming with default port: " + port);
+                        }
+                        catch (IndexOutOfBoundsException e2)
+                        {
+                            printUsage();
+                            return -1;
+                        }
+                    }
+                }
+            }
+            return -1;
+        }
+    
+        
+        public boolean containPort(String args[])
+        {
+            boolean containPort = false;
+            
+            List<String> arguments = new ArrayList<String>();
+            arguments.addAll(Arrays.asList(args));
+            
+            containPort = arguments.contains(port);
+            return containPort;
+        }
+        
+        public boolean containHost(String args[])
+        {
+            boolean containHost = false;
+            
+            List<String> arguments = new ArrayList<String>();
+            arguments.addAll(Arrays.asList(args));
+            
+            containHost = arguments.contains(host);
+            return containHost;
+        }
+        
+        public boolean containNomv(String args[])
+        {
+            boolean containNomv = false;
+            
+            List<String> arguments = new ArrayList<String>();
+            arguments.addAll(Arrays.asList(args));
+            
+            containNomv = arguments.contains(nomv);
+            return containNomv;
+        }
+       
+        public boolean containHelp(String args[])
+        {
+            boolean containHelp = false;
+            
+            List<String> arguments = new ArrayList<String>();
+            arguments.addAll(Arrays.asList(args));
+            
+            containHelp = arguments.contains(help);
+            return containHelp;
+        }
+        
+        
         public static void main(String args[]) throws PogamutException {
         // wrapped logic for bots executions, suitable to run single bot in single JVM
 
+        Main main = new Main();
+        if (!main.isArgsOk(args))
+            return;
+        
+        boolean isMatrixEnable = false;
         String host = "localhost";
         int port = 3000;
 
-        if (args.length > 0)
+        if (main.containHelp(args))
         {
-            host = args[0];
+            main.printUsage();
+            return;
         }
-        if (args.length > 1)
+
+        if (main.containHost(args))
         {
-            String customPort = args[1];
-            try
-            {
-                port = Integer.parseInt(customPort);
-            }
-            catch (NumberFormatException e)
-            {
-                System.out.println("Invalid port. Expecting numeric. Resuming with default port: " + port);
-            }
+            host = main.getHost(args);
+        }
+       
+        if (main.containPort(args))
+        {
+            port = main.getPort(args);
         }
         
         UT2004BotRunner runner = new UT2004BotRunner(Bot.class, "Runners", host, port);
+        
         runner.setMain(true);
         runner.setName("Terminator");
+
+        if (!main.containNomv(args))
+        {
+            MatrixVisibility matrix = new MatrixVisibility();
+            matrix.MatrixInitialized();
+        }
+        
         //runner.setLogLevel(Level.OFF);
         runner.startAgents(1);
     }
