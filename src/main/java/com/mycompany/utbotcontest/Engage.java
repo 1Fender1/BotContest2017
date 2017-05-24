@@ -85,7 +85,7 @@ public class Engage {
     public Player stateEngage() throws IOException {
         //log.info("Decision is: ENGAGE");
         //config.setName("Hunter [ENGAGE]");
-        bot.getBotName().setInfo("ENGAGE");
+        //bot.getBotName().setInfo("ENGAGE");
         
         Random random = new Random();
         

@@ -1,10 +1,15 @@
 package com.mycompany.utbotcontest;
 
+import com.sun.glass.ui.Window;
+import cz.cuni.amis.pogamut.base.communication.connection.exception.ConnectionException;
+import cz.cuni.amis.pogamut.base.component.bus.event.BusAwareCountDownLatch.BusStoppedInterruptedException;
+import cz.cuni.amis.pogamut.base.component.exception.ComponentCantStartException;
 import cz.cuni.amis.pogamut.ut2004.utils.UT2004BotRunner;
 import cz.cuni.amis.utils.exception.PogamutException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 
 /**
  *
@@ -231,19 +236,53 @@ public class Main {
             port = main.getPort(args);
         }
         
-        UT2004BotRunner runner = new UT2004BotRunner(Bot.class, "Runners", host, port);
-        
-        runner.setMain(true);
-        runner.setName("Terminator");
+       
 
         if (!main.containNomv(args))
         {
             MatrixVisibility matrix = new MatrixVisibility();
             matrix.MatrixInitialized();
         }
-        
+
         //runner.setLogLevel(Level.OFF);
-        runner.startAgents(1);
+
+        while (true)
+        {
+            try
+            {
+                UT2004BotRunner runner = new UT2004BotRunner(Bot.class, "Runners", host, port);
+                runner.setMain(true);
+                runner.setLogLevel(Level.OFF);
+                runner.setConsoleLogging(false);
+                runner.startAgents(1);
+                Thread.sleep(1500);
+            }
+            catch (ComponentCantStartException e)
+            {
+                Throwable cause = e.getCause();
+                if (cause instanceof ConnectionException)
+                {
+                    System.out.println("Connection to server failed... retrying");
+                    e.printStackTrace();
+                }
+                else if (cause instanceof BusStoppedInterruptedException)
+                {
+                    e.printStackTrace();
+                    System.out.println("Aborting...");
+                    break;
+                }
+                else
+                {
+                    e.printStackTrace();
+                    System.out.println("Some other cause for ComponentCantStartException... retrying");
+                }
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+                System.out.println("Some other exception... retrying");
+            }
+        }    
     }
     
 }

@@ -94,7 +94,7 @@ public class Medkit {
             log.warning("NO HEALTH ITEM TO RUN TO => ITEMS");
             runAround.stateRunAroundItems();
         } else {
-            bot.getBotName().setInfo("MEDKIT");
+            //bot.getBotName().setInfo("MEDKIT");
             navBot.setItem(item);
             navBot.navigate(item);
     }

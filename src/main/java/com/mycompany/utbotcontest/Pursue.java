@@ -81,14 +81,14 @@ public class Pursue {
        
     protected void statePursue() throws IOException {
         //log.info("Decision is: PURSUE");
-        bot.getBotName().setInfo("PURSUE");
+        //bot.getBotName().setInfo("PURSUE");
         enemy = mainBot.getEnemy();
         mainBot.setPursueCount(mainBot.getPursueCount() + 1);
         if (mainBot.getPursueCount() > 30) {
             mainBot.reset();
         }
         if (enemy != null) {
-        	bot.getBotName().setInfo("PURSUE");
+        	//bot.getBotName().setInfo("PURSUE");
                 mainBot.getNavPoints().getNearestNavPoint(enemy.getLocation());
         	navBot.navigate(enemy.getLocation());
                 mainBot.getNavigation().setContinueTo(enemy.getLocation());

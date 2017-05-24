@@ -534,7 +534,7 @@ protected List<Item> itemsToRunAround = null;
         
         if (navBot.isNavigatingToItem() && navBot.getItem() != null)
         {
-            bot.getBotName().setInfo("ITEM: " + navBot.getItem().getType().getName() + "");
+            //bot.getBotName().setInfo("ITEM: " + navBot.getItem().getType().getName() + "");
             if(navBot.isStuck()){
                 log.info("ADD TABOO: " + navBot.getItem().getType().getName());
                 tabooItems.add(navBot.getItem(), 120);
@@ -542,7 +542,7 @@ protected List<Item> itemsToRunAround = null;
         }
         else
         {
-            bot.getBotName().setInfo("RUN AROUND ITEM");
+            //bot.getBotName().setInfo("RUN AROUND ITEM");
             navBot.navigate();
         }
         
@@ -627,12 +627,12 @@ protected List<Item> itemsToRunAround = null;
         if (item == null) {
         	log.warning("NO ITEM TO RUN FOR!");
         	if (mainBot.getNavigation().isNavigatingToItem()) return;
-        	bot.getBotName().setInfo("RANDOM NAV");
+        	//bot.getBotName().setInfo("RANDOM NAV");
                 navBot.navigate();
         } else {
         	navBot.setItem(item);
         	log.info("RUNNING FOR: " + item.getType().getName());
-        	bot.getBotName().setInfo("ITEM: " + item.getType().getName() + "");
+        	//bot.getBotName().setInfo("ITEM: " + item.getType().getName() + "");
                 navBot.navigate(item);
                 if(!navBot.navigate(item)){
                 log.info("ADD TABOO: " + item.getType().getName());

@@ -140,6 +140,17 @@ navEnhanceDir + "/" + memoryName + ".txt", true));
                 }
             }
         }
+        
+        if (toNavPoints.size() != fromNavPoints.size())
+        {
+            System.out.println("Fichier incohérent ! - Suppression de " + navEnhanceDir + "/" +mapName + ".txt");
+            File fichier = new File(navEnhanceDir + "/" + mapName + ".txt");
+            if (fichier.exists())
+            {
+                fichier.delete();
+            }
+        }
+        
         for (int i = 0; i < fromNavPoints.size(); i++)
         {
             System.out.println("NavP p" + i + " from : " + fromNavPoints.get(i).getId().getStringId() + " to : " + toNavPoints.get(i).getId().getStringId());

@@ -91,7 +91,7 @@ public class Hit {
         
         protected void stateHit() {
             //log.info("Decision is: HIT");
-            bot.getBotName().setInfo("HIT");
+            //bot.getBotName().setInfo("HIT");
             navBot.setNavigating(false);
             navBot.setNavigatingToItem(false);
             mainBot.getNavigation().stopNavigation();

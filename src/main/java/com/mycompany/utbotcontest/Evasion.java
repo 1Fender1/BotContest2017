@@ -176,7 +176,7 @@ public class Evasion extends UT2004BotHSController<UT2004Bot> {
         
         for (Entry<UnrealId, Item> element : mainBot.getItems().getAllItems().entrySet())
         {
-            if (element.getValue().getDescriptor().getItemCategory().toString().equals("HEALTH") || element.getValue().getDescriptor().getItemCategory().toString().equals("HEALTH"))
+            if (element.getValue().getDescriptor().getItemCategory().toString().equals("HEALTH") || element.getValue().getDescriptor().getItemCategory().toString().equals("ARMOR"))
                 listTemp.add(element.getValue());
         }
        
@@ -291,7 +291,7 @@ public class Evasion extends UT2004BotHSController<UT2004Bot> {
     {
         if (visibility != null && visibility.isInitialized())
         {
-            bot.getBotName().setInfo("Evasion");
+            //bot.getBotName().setInfo("Evasion");
             if (mainBot.getPlayers().canSeeEnemies())
             {
                 isEvading = true;
@@ -311,7 +311,7 @@ public class Evasion extends UT2004BotHSController<UT2004Bot> {
         }
         else
         {
-            bot.getBotName().setInfo("Evasion");
+            //bot.getBotName().setInfo("Evasion");
             if (mainBot.getPlayers().canSeeEnemies())
             {
                 isEvading = true;

@@ -88,13 +88,9 @@ public class BotNavigation {
     boolean navigating=false; 
     
     private UT2004AStar navigationAS;
-    
-    private int indexNavAS;
+
     
     List<NavPoint> cheminAS;
-    
-    boolean navigatingToItem=false; 
-    boolean navigating=false; 
     
     private Alea alea;
     
@@ -310,15 +306,13 @@ public class BotNavigation {
                         NavPoint navPToTemp = navPoints.getNearestNavPoint(chemin.get(indexNavAS));
                         if (!navPToTemp.isLiftCenter() && !navPToTemp.isLiftExit() && !navPToTemp.isLiftJumpExit())
                         {
-                            memory.addInfo(mainBot.getGame().getMapName(), navPoints.getNearestNavPoint(chemin.get(indexNavAS-1)).getId().getStringId(), navPoints.getNearestNavPoint(chemin.get(indexNavAS)).getId().getStringId());
+                            if (!navPoints.getNearestNavPoint(chemin.get(indexNavAS-1)).getId().getStringId().equals(navPoints.getNearestNavPoint(chemin.get(indexNavAS)).getId().getStringId()))
+                                memory.addInfo(mainBot.getGame().getMapName(), navPoints.getNearestNavPoint(chemin.get(indexNavAS-1)).getId().getStringId(), navPoints.getNearestNavPoint(chemin.get(indexNavAS)).getId().getStringId());
                             if (mainBot.getLearning())
                             {
                                 mainBot.setSecondTimeLearning(System.currentTimeMillis());
-                                if ((mainBot.getSecondTimeLearning() - mainBot.getFirstTimeLearning()) >= 50000)
-                                {
-                                    mainBot.setFirstTimeLearning(mainBot.getSecondTimeLearning());
-                                }
-                                mainBot.getAct().act(new Respawn());
+                                mainBot.setFirstTimeLearning(mainBot.getSecondTimeLearning());
+                                mainBot.getBot().respawn();
                             }
                         }
                     
@@ -345,18 +339,6 @@ public class BotNavigation {
                 mouvFocus();
                 move.doubleJump(0.35,700);
                 mouvFocus();
-                /*else{
-                    if(mainBot.rayjump.isResult()){
-                        //move.turnTo(chemin.get(indexNavAS));
-                        mouvFocus();
-                        move.doubleJump(0.35,700);
-                        mouvFocus();
-                    }
-                    else{
-                        //move.turnTo(chemin.get(indexNavAS));
-                        mouvFocus();
-                    }
-                }*/
             }
             else{
                 if(navPoints.getNearestNavPoint(chemin.get(indexNavAS).getLocation()).isLiftCenter() || navPoints.getNearestNavPoint(chemin.get(indexNavAS-1).getLocation()).isLiftCenter()){
@@ -365,6 +347,20 @@ public class BotNavigation {
                     }
                 }
                 else{
+                    try{
+                        NavPoint nextNavP = navPoints.getNearestNavPoint(chemin.get(indexNavAS).getLocation());
+                        if (!nextNavP.isInvSpot())
+                        {
+                            Alea rand = new Alea();
+                            if (rand.uneChanceSur(20))
+                            {
+                                mainBot.getMove().jump();
+                            }
+                        }
+                    } catch (NullPointerException e)
+                    {
+                        System.out.println("Pointeur null");
+                    }
                     mouvFocus();
                 }
             }
@@ -372,6 +368,20 @@ public class BotNavigation {
         }
         else{
             //move.turnTo(chemin.get(indexNavAS));
+            try{
+                NavPoint nextNavP = navPoints.getNearestNavPoint(chemin.get(indexNavAS).getLocation());
+                if (!nextNavP.isInvSpot())
+                {
+                    Alea rand = new Alea();
+                    if (rand.uneChanceSur(20))
+                    {
+                        mainBot.getMove().jump();
+                    }
+                }
+            } catch (NullPointerException e)
+            {
+                System.out.println("Pointeur null");
+            }
             mouvFocus();
         }
     }
@@ -439,7 +449,9 @@ public class BotNavigation {
             navigate();
         }
         else{
-            Location botLoc = bot.getLocation();
+            if (neededItem == null)
+                return false;
+            Location botLoc = info.getLocation();
             Location itemLoc = neededItem.getLocation();
             //cheminAS = navigationAS.computePath(navigation.getNearestNavPoint(botLoc), navigation.getNearestNavPoint(itemLoc)).get();
             chemin = navigation.getPathPlanner().computePath(navigation.getNearestNavPoint(botLoc), navigation.getNearestNavPoint(itemLoc)).get();

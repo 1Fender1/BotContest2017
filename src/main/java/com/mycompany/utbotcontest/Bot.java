@@ -296,8 +296,8 @@ public class Bot extends UT2004BotModuleController {
         });
         //testAjoutNoeuds();
         fwMap.refreshPathMatrix();
-        draw.clearAll();
-        testDraw();
+        /*draw.clearAll();
+        testDraw();*/
         
     	//navMeshModule.setReloadNavMesh(true); // tells NavMesh to reconstruct OffMeshPoints    	
     }
@@ -322,7 +322,8 @@ public class Bot extends UT2004BotModuleController {
     public Initialize getInitializeCommand() {
         // just set the name of the bot and his skill level, 1 is the lowest, 7 is the highest
     	// skill level affects how well will the bot aim
-        return new Initialize().setName("T80" + (instanceCount++)).setDesiredSkill(5);
+        //return new Initialize().setName("T80" + (instanceCount++)).setDesiredSkill(5);
+        return new Initialize().setName("Runners").setDesiredSkill(5);
     }
       
         @Override
@@ -382,10 +383,11 @@ public class Bot extends UT2004BotModuleController {
                 rayjump=raycasting.getRay(RAYJUMP);
             }
         });
+        
         raycasting.endRayInitSequence();
-        getAct().act(new Configuration().setDrawTraceLines(true).setAutoTrace(true));
-        
-        
+        //getAct().act(new Configuration().setDrawTraceLines(true).setAutoTrace(true));
+        getAct().act(new Configuration().setDrawTraceLines(false).setAutoTrace(true));
+        getAct().act(new Configuration().setShowDebug(false));
     }
     
     
@@ -440,20 +442,6 @@ public class Bot extends UT2004BotModuleController {
     	log.info("I have just been hurt by " + event.getInstigator() + " for: " + event.getDamageType() + "[" + event.getDamage() + "]");
     }
     
-    /*@EventListener (eventClass = HearNoise.class)
-    protected void hearNoise (HearNoise event) {
-        if (senses.getNoiseType().contains("XWeapons.")) {
-            move.turnHorizontal(UnrealUtils.degreeToUnrealDegrees(event.getRotation().yaw));
-            if (players.canSeeEnemies()) {
-                setEnemy(info.getNearestVisiblePlayer());
-            }
-            else {
-                if (comportement.isAgressif()) {
-                    navBot.navigate(event.getRotation().toLocation());
-                }
-            }
-        }
-    }*/
 
     @Override
     public void logic() throws PogamutException {
@@ -463,11 +451,10 @@ public class Bot extends UT2004BotModuleController {
         if (isLearning)
         {
             secondTimeLearning = System.currentTimeMillis();
-            if ((secondTimeLearning - firstTimeLearning) >= 50000)
+            if ((secondTimeLearning - firstTimeLearning) >= 90000)
             {
                 firstTimeLearning = secondTimeLearning;
-                System.out.println("Ca fait 50 seconde !");
-                getAct().act(new Respawn());
+                bot.respawn();
                 
             }
         }
@@ -570,6 +557,7 @@ public class Bot extends UT2004BotModuleController {
         } catch (IOException ex) {
             Logger.getLogger(Bot.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
     }
     
     @Override
@@ -592,8 +580,8 @@ public class Bot extends UT2004BotModuleController {
         }
         //testAjoutNoeuds();
         fwMap.refreshPathMatrix();
-        draw.clearAll();
-        testDraw();
+        /*draw.clearAll();
+        testDraw();*/
         
         if (lastEnemy != null) {
             distanceBotTarget = Math.abs(info.getLocation().getDistance2D(lastEnemy.getLocation()));
