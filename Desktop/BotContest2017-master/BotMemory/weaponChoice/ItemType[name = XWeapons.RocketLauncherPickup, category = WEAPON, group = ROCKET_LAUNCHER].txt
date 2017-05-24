@@ -1,0 +1,1 @@
+ItemType[name = XWeapons.RocketLauncherPickup, category = WEAPON, group = ROCKET_LAUNCHER];0.6009220617818336;1.0;13;8;500.0;3000.0

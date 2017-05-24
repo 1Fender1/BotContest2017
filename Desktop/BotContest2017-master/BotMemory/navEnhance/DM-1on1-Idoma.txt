@@ -1,0 +1,3 @@
+DM-1on1-Idoma.PathNode3~DM-1on1-Idoma.JumpSpot0
+DM-1on1-Idoma.PathNode3~DM-1on1-Idoma.JumpSpot0
+DM-1on1-Idoma.PathNode37~DM-1on1-Idoma.JumpSpot1

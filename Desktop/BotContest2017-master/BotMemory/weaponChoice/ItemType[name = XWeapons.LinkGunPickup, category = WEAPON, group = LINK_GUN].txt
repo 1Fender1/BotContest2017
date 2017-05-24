@@ -1,0 +1,1 @@
+ItemType[name = XWeapons.LinkGunPickup, category = WEAPON, group = LINK_GUN];0.5544597457838901;4.0;6;4;500.0;2000.0

@@ -1,0 +1,1 @@
+ItemType[name = XWeapons.ShieldGunPickup, category = WEAPON, group = SHIELD_GUN];0.0;100.0;0;3;0.0;0.0

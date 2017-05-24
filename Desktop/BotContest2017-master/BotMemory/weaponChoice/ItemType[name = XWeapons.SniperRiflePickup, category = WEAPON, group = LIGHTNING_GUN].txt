@@ -1,0 +1,1 @@
+ItemType[name = XWeapons.SniperRiflePickup, category = WEAPON, group = LIGHTNING_GUN];0.3617121473104421;2.0;0;1;700.0;4000.0

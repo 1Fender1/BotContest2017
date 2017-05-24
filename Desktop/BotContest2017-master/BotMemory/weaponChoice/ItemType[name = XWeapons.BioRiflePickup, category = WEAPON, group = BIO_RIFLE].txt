@@ -1,0 +1,1 @@
+ItemType[name = XWeapons.BioRiflePickup, category = WEAPON, group = BIO_RIFLE];0.3978049623914747;100.0;3;5;50.0;1500.0
