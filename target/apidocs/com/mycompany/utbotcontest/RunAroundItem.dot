@@ -10,7 +10,7 @@ digraph G {
 	nodesep=0.25;
 	ranksep=0.5;
 	// com.mycompany.utbotcontest.RunAroundItem
-	c12 [label=<<table title="com.mycompany.utbotcontest.RunAroundItem" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" bgcolor="lemonChiffon" href="./RunAroundItem.html">
+	c58 [label=<<table title="com.mycompany.utbotcontest.RunAroundItem" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" bgcolor="lemonChiffon" href="./RunAroundItem.html">
 		<tr><td><table border="0" cellspacing="0" cellpadding="1">
 <tr><td align="center" balign="center"> RunAroundItem </td></tr>
 		</table></td></tr>

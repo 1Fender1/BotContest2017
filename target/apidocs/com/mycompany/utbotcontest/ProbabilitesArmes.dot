@@ -10,15 +10,15 @@ digraph G {
 	nodesep=0.25;
 	ranksep=0.5;
 	// com.mycompany.utbotcontest.ProbabilitesArmes
-	c48 [label=<<table title="com.mycompany.utbotcontest.ProbabilitesArmes" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" bgcolor="lemonChiffon" href="./ProbabilitesArmes.html">
+	c96 [label=<<table title="com.mycompany.utbotcontest.ProbabilitesArmes" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" bgcolor="lemonChiffon" href="./ProbabilitesArmes.html">
 		<tr><td><table border="0" cellspacing="0" cellpadding="1">
 <tr><td align="center" balign="center"> ProbabilitesArmes </td></tr>
 		</table></td></tr>
 		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
 	//com.mycompany.utbotcontest.ProbabilitesArmes implements java.lang.Comparable<T>
-	c57:p -> c48:p [dir=back,arrowtail=empty,style=dashed];
+	c111:p -> c96:p [dir=back,arrowtail=empty,style=dashed];
 	// java.lang.Comparable<T>
-	c57 [label=<<table title="java.lang.Comparable" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="http://download.oracle.com/javase/6/docs/api/java/lang/Comparable.html">
+	c111 [label=<<table title="java.lang.Comparable" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="http://download.oracle.com/javase/6/docs/api/java/lang/Comparable.html">
 		<tr><td><table border="0" cellspacing="0" cellpadding="1">
 <tr><td align="center" balign="center"> &#171;interface&#187; </td></tr>
 <tr><td align="center" balign="center"> Comparable&lt;T&gt; </td></tr>

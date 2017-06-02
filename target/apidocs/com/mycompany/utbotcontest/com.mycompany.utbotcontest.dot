@@ -9,71 +9,119 @@ digraph G {
 	node [fontname="arial",fontsize=10,shape=plaintext];
 	nodesep=0.25;
 	ranksep=0.5;
+	// com.mycompany.utbotcontest.WeaponMemory
+	c0 [label=<<table title="com.mycompany.utbotcontest.WeaponMemory" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./WeaponMemory.html">
+		<tr><td><table border="0" cellspacing="0" cellpadding="1">
+<tr><td align="center" balign="center"> WeaponMemory </td></tr>
+		</table></td></tr>
+		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
 	// com.mycompany.utbotcontest.RunAroundItem
-	c0 [label=<<table title="com.mycompany.utbotcontest.RunAroundItem" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./RunAroundItem.html">
+	c1 [label=<<table title="com.mycompany.utbotcontest.RunAroundItem" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./RunAroundItem.html">
 		<tr><td><table border="0" cellspacing="0" cellpadding="1">
 <tr><td align="center" balign="center"> RunAroundItem </td></tr>
 		</table></td></tr>
 		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
 	// com.mycompany.utbotcontest.Pursue
-	c1 [label=<<table title="com.mycompany.utbotcontest.Pursue" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Pursue.html">
+	c2 [label=<<table title="com.mycompany.utbotcontest.Pursue" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Pursue.html">
 		<tr><td><table border="0" cellspacing="0" cellpadding="1">
 <tr><td align="center" balign="center"> Pursue </td></tr>
 		</table></td></tr>
 		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
 	// com.mycompany.utbotcontest.ProbabilitesArmes
-	c2 [label=<<table title="com.mycompany.utbotcontest.ProbabilitesArmes" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./ProbabilitesArmes.html">
+	c3 [label=<<table title="com.mycompany.utbotcontest.ProbabilitesArmes" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./ProbabilitesArmes.html">
 		<tr><td><table border="0" cellspacing="0" cellpadding="1">
 <tr><td align="center" balign="center"> ProbabilitesArmes </td></tr>
 		</table></td></tr>
 		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
+	// com.mycompany.utbotcontest.NavigationMemory
+	c4 [label=<<table title="com.mycompany.utbotcontest.NavigationMemory" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./NavigationMemory.html">
+		<tr><td><table border="0" cellspacing="0" cellpadding="1">
+<tr><td align="center" balign="center"> NavigationMemory </td></tr>
+		</table></td></tr>
+		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
 	// com.mycompany.utbotcontest.MeshInit
-	c3 [label=<<table title="com.mycompany.utbotcontest.MeshInit" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./MeshInit.html">
+	c5 [label=<<table title="com.mycompany.utbotcontest.MeshInit" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./MeshInit.html">
 		<tr><td><table border="0" cellspacing="0" cellpadding="1">
 <tr><td align="center" balign="center"> MeshInit </td></tr>
 		</table></td></tr>
 		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
+	// com.mycompany.utbotcontest.Memory
+	c6 [label=<<table title="com.mycompany.utbotcontest.Memory" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Memory.html">
+		<tr><td><table border="0" cellspacing="0" cellpadding="1">
+<tr><td align="center" balign="center"><font face="ariali"> Memory </font></td></tr>
+		</table></td></tr>
+		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
 	// com.mycompany.utbotcontest.Medkit
-	c4 [label=<<table title="com.mycompany.utbotcontest.Medkit" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Medkit.html">
+	c7 [label=<<table title="com.mycompany.utbotcontest.Medkit" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Medkit.html">
 		<tr><td><table border="0" cellspacing="0" cellpadding="1">
 <tr><td align="center" balign="center"> Medkit </td></tr>
 		</table></td></tr>
 		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
+	// com.mycompany.utbotcontest.MatrixVisibility
+	c8 [label=<<table title="com.mycompany.utbotcontest.MatrixVisibility" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./MatrixVisibility.html">
+		<tr><td><table border="0" cellspacing="0" cellpadding="1">
+<tr><td align="center" balign="center"> MatrixVisibility </td></tr>
+		</table></td></tr>
+		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
+	// com.mycompany.utbotcontest.MapMemory
+	c9 [label=<<table title="com.mycompany.utbotcontest.MapMemory" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./MapMemory.html">
+		<tr><td><table border="0" cellspacing="0" cellpadding="1">
+<tr><td align="center" balign="center"> MapMemory </td></tr>
+		</table></td></tr>
+		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
 	// com.mycompany.utbotcontest.Main
-	c5 [label=<<table title="com.mycompany.utbotcontest.Main" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Main.html">
+	c10 [label=<<table title="com.mycompany.utbotcontest.Main" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Main.html">
 		<tr><td><table border="0" cellspacing="0" cellpadding="1">
 <tr><td align="center" balign="center"> Main </td></tr>
 		</table></td></tr>
 		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
 	// com.mycompany.utbotcontest.Hit
-	c6 [label=<<table title="com.mycompany.utbotcontest.Hit" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Hit.html">
+	c11 [label=<<table title="com.mycompany.utbotcontest.Hit" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Hit.html">
 		<tr><td><table border="0" cellspacing="0" cellpadding="1">
 <tr><td align="center" balign="center"> Hit </td></tr>
 		</table></td></tr>
 		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
+	// com.mycompany.utbotcontest.Evasion
+	c12 [label=<<table title="com.mycompany.utbotcontest.Evasion" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Evasion.html">
+		<tr><td><table border="0" cellspacing="0" cellpadding="1">
+<tr><td align="center" balign="center"> Evasion </td></tr>
+		</table></td></tr>
+		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
 	// com.mycompany.utbotcontest.Engage
-	c7 [label=<<table title="com.mycompany.utbotcontest.Engage" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Engage.html">
+	c13 [label=<<table title="com.mycompany.utbotcontest.Engage" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Engage.html">
 		<tr><td><table border="0" cellspacing="0" cellpadding="1">
 <tr><td align="center" balign="center"> Engage </td></tr>
 		</table></td></tr>
 		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
+	// com.mycompany.utbotcontest.Comportement
+	c14 [label=<<table title="com.mycompany.utbotcontest.Comportement" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Comportement.html">
+		<tr><td><table border="0" cellspacing="0" cellpadding="1">
+<tr><td align="center" balign="center"> Comportement </td></tr>
+		</table></td></tr>
+		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
 	// com.mycompany.utbotcontest.BotNavigation
-	c8 [label=<<table title="com.mycompany.utbotcontest.BotNavigation" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./BotNavigation.html">
+	c15 [label=<<table title="com.mycompany.utbotcontest.BotNavigation" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./BotNavigation.html">
 		<tr><td><table border="0" cellspacing="0" cellpadding="1">
 <tr><td align="center" balign="center"> BotNavigation </td></tr>
 		</table></td></tr>
 		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
 	// com.mycompany.utbotcontest.Bot
-	c9 [label=<<table title="com.mycompany.utbotcontest.Bot" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Bot.html">
+	c16 [label=<<table title="com.mycompany.utbotcontest.Bot" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Bot.html">
 		<tr><td><table border="0" cellspacing="0" cellpadding="1">
 <tr><td align="center" balign="center"> Bot </td></tr>
 		</table></td></tr>
 		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
 	// com.mycompany.utbotcontest.Alea
-	c10 [label=<<table title="com.mycompany.utbotcontest.Alea" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Alea.html">
+	c17 [label=<<table title="com.mycompany.utbotcontest.Alea" border="0" cellborder="1" cellspacing="0" cellpadding="2" port="p" href="./Alea.html">
 		<tr><td><table border="0" cellspacing="0" cellpadding="1">
 <tr><td align="center" balign="center"> Alea </td></tr>
 		</table></td></tr>
 		</table>>, fontname="arial", fontcolor="black", fontsize=10.0];
+	//com.mycompany.utbotcontest.WeaponMemory extends com.mycompany.utbotcontest.Memory
+	c6:p -> c0:p [dir=back,arrowtail=empty];
+	//com.mycompany.utbotcontest.NavigationMemory extends com.mycompany.utbotcontest.Memory
+	c6:p -> c4:p [dir=back,arrowtail=empty];
+	//com.mycompany.utbotcontest.MapMemory extends com.mycompany.utbotcontest.Memory
+	c6:p -> c9:p [dir=back,arrowtail=empty];
 }
 

@@ -9,3 +9,4 @@ DM-1on1-Albatross.PathNode97~DM-1on1-Albatross.JumpSpot10
 DM-1on1-Albatross.PathNode44~DM-1on1-Albatross.PathNode37
 DM-1on1-Albatross.PathNode90~DM-1on1-Albatross.JumpSpot9
 DM-1on1-Albatross.PathNode53~DM-1on1-Albatross.InventorySpot318
+DM-1on1-Albatross.PathNode9~DM-1on1-Albatross.InventorySpot363

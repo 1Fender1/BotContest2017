@@ -213,12 +213,13 @@ public class Main {
         // wrapped logic for bots executions, suitable to run single bot in single JVM
 
         Main main = new Main();
+        
         if (!main.isArgsOk(args))
             return;
         
         boolean isMatrixEnable = false;
-        String host = "localhost";
-        int port = 3000;
+        String hostVal = "localhost";
+        int portVal = 3000;
 
         if (main.containHelp(args))
         {
@@ -228,29 +229,27 @@ public class Main {
 
         if (main.containHost(args))
         {
-            host = main.getHost(args);
+            hostVal = main.getHost(args);
         }
        
         if (main.containPort(args))
         {
-            port = main.getPort(args);
+            portVal = main.getPort(args);
         }
         
        
-
-        if (!main.containNomv(args))
+        System.out.println("Connexion à : " + hostVal + " " + portVal);
+        /*if (!main.containNomv(args))
         {
             MatrixVisibility matrix = new MatrixVisibility();
             matrix.MatrixInitialized();
-        }
-
-        //runner.setLogLevel(Level.OFF);
-
+        }*/
+        
         while (true)
         {
             try
             {
-                UT2004BotRunner runner = new UT2004BotRunner(Bot.class, "Runners", host, port);
+                UT2004BotRunner runner = new UT2004BotRunner(Bot.class, "Runners", hostVal, portVal);
                 runner.setMain(true);
                 runner.setLogLevel(Level.OFF);
                 runner.setConsoleLogging(false);

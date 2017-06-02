@@ -1,1 +1,0 @@
-ItemType[name = XWeapons.FlakCannonPickup, category = WEAPON, group = FLAK_CANNON];0.2364485666727996;2.0;2;4;50.0;1800.0

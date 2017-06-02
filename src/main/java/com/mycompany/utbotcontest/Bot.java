@@ -225,7 +225,7 @@ public class Bot extends UT2004BotModuleController {
     
     private boolean isLearning() throws FileNotFoundException, FileNotFoundException, IOException
     {
-        File conf = new File("./BotConfig.txt");
+        File conf = new File("BotConfig.txt");
         
         if (!conf.exists())
         {
