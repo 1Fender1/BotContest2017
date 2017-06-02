@@ -1,0 +1,1 @@
+ItemType[name = XWeapons.AssaultRiflePickup, category = WEAPON, group = ASSAULT_RIFLE];0.015874665506112925;5.0;2;124;0.0;600.0

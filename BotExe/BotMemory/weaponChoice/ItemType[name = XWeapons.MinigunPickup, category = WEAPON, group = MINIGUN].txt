@@ -1,0 +1,1 @@
+ItemType[name = XWeapons.MinigunPickup, category = WEAPON, group = MINIGUN];7.3152294134436984E-6;3.0;0;11;50.0;1800.0

@@ -1,0 +1,8 @@
+DM-1on1-Irondust.PathNode28~DM-1on1-Irondust.JumpSpot1
+DM-1on1-Irondust.PathNode17~DM-1on1-Irondust.PathNode16
+DM-1on1-Irondust.InventorySpot54~DM-1on1-Irondust.PathNode11
+DM-1on1-Irondust.PathNode16~DM-1on1-Irondust.JumpSpot0
+DM-1on1-Irondust.JumpSpot2~DM-1on1-Irondust.PathNode29
+DM-1on1-Irondust.JumpSpot0~DM-1on1-Irondust.PathNode28
+DM-1on1-Irondust.JumpSpot0~DM-1on1-Irondust.PathNode28
+DM-1on1-Irondust.JumpSpot0~DM-1on1-Irondust.PathNode28

@@ -1,0 +1,1 @@
+ItemType[name = XWeapons.ShockRiflePickup, category = WEAPON, group = SHOCK_RIFLE];2.98443012514271E-4;5.0;0;10;1000.0;4000.0
